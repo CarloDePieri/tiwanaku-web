@@ -7,12 +7,12 @@ import desertUrl from "../assets/desert.png"
 import forestUrl from "../assets/forest.png"
 import mountainUrl from "../assets/mountain.png"
 import valleyUrl from "../assets/valley.png"
-import { Field, Size } from "../game.ts"
+import { Field, Size } from "../game/structures.ts"
 
 interface SquareProps {
   field: Field | undefined
   size: Size | undefined
-  groupId: number
+  groupId: number | undefined
 }
 
 function getBackgroundImage(field: Field | undefined): string {
@@ -73,7 +73,7 @@ export default function Square({
           backgroundSize: "cover",
         }}
       >
-        {groupId}
+        {groupId ?? ""}
       </div>
     </div>
   )

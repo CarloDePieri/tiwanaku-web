@@ -1,30 +1,22 @@
 import "./App.css"
 import Square from "./components/Square.tsx"
-import { generateState } from "./game.ts"
+import { generateBoard } from "./game/procedures.ts"
 
 function App() {
-  // console.log(generateState())
-  //
-  // return <>
-  //   OK
-  // </>
-  const state = generateState()
-  console.log(state)
-
+  const board = generateBoard("small")
   return (
     <>
       table
       <div>
-        {state.map((row) => {
+        {board.get().map((row, y) => {
           return (
-            <div
-              style={{ display: "flex" }}
-              key={`row_${row[0].coordinates[0]}`}
-            >
-              {row.map((square) => {
+            // TODO fix the key
+            <div style={{ display: "flex" }} key={`row_${y}`}>
+              {row.map((_, x) => {
+                const square = board.getCell(x, y)
                 return (
                   <Square
-                    key={`coord_${square.coordinates[0]}_${square.coordinates[1]}`}
+                    key={`coord_${square.coordinates.x}_${square.coordinates.y}`}
                     field={square.field}
                     size={square.size}
                     groupId={square.groupId}
