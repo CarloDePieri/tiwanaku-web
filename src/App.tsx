@@ -8,7 +8,7 @@ function App() {
     <>
       table
       <div>
-        {board.get().map((row, y) => {
+        {board.getBoard().map((row, y) => {
           return (
             // TODO fix the key
             <div style={{ display: "flex" }} key={`row_${y}`}>
@@ -19,7 +19,6 @@ function App() {
                     key={`coord_${square.coordinates.x}_${square.coordinates.y}`}
                     field={square.field}
                     size={square.size}
-                    groupId={square.groupId}
                   />
                 )
               })}

@@ -12,7 +12,6 @@ import { Field, Size } from "../game/structures.ts"
 interface SquareProps {
   field: Field | undefined
   size: Size | undefined
-  groupId: number | undefined
 }
 
 function getBackgroundImage(field: Field | undefined): string {
@@ -47,11 +46,7 @@ function getSizeImage(size: Size | undefined): string {
   }
 }
 
-export default function Square({
-  field,
-  size,
-  groupId,
-}: Readonly<SquareProps>) {
+export default function Square({ field, size }: Readonly<SquareProps>) {
   return (
     <div
       style={{
@@ -72,9 +67,7 @@ export default function Square({
           backgroundImage: `url(${getSizeImage(size)})`,
           backgroundSize: "cover",
         }}
-      >
-        {groupId ?? ""}
-      </div>
+      ></div>
     </div>
   )
 }

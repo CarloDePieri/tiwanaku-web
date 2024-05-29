@@ -53,6 +53,17 @@ export class Coord {
     const leftOrRight = dx == 1 && dy == 0
     return aboveOrBelow || leftOrRight
   }
+
+  getOrthogonalNeighbors(boardHeight: number, boardWidth: number): Coord[] {
+    return [
+      new Coord(this.x - 1, this.y),
+      new Coord(this.x + 1, this.y),
+      new Coord(this.x, this.y - 1),
+      new Coord(this.x, this.y + 1),
+    ].filter(
+      ({ y, x }) => x >= 0 && x < boardWidth && y >= 0 && y < boardHeight,
+    )
+  }
 }
 
 /**
@@ -61,7 +72,7 @@ export class Coord {
  *
  * TODO find a way to make this more efficient, maybe an Hashtable or a Set that actually works with .equals
  */
-class CoordSet extends Array<Coord> {
+export class CoordSet extends Array<Coord> {
   /**
    * Add a coordinate to the set.
    *
@@ -80,6 +91,10 @@ class CoordSet extends Array<Coord> {
   has(coord: Coord): boolean {
     return this.some((c) => c.equals(coord))
   }
+
+  difference(other: CoordSet): CoordSet {
+    return this.filter((x: Coord) => !other.has(x)) as CoordSet
+  }
 }
 
 /**
@@ -90,13 +105,19 @@ export class Group {
    * The coordinates that make up the group.
    */
   readonly coords: Coord[]
+  /**
+   * The field of the group.
+   */
+  readonly field: Field | undefined
 
   /**
    * Create a group.
    * @param {Coord[]} coords - The coordinates that make up the group.
+   * @param {Field} field - The kind of field assigned to this group
    */
-  constructor(coords: Coord[]) {
+  constructor(coords: Coord[], field: Field | undefined) {
     this.coords = coords
+    this.field = field
   }
 
   /**
@@ -104,7 +125,15 @@ export class Group {
    * @return {Group} The group with the new coordinate.
    */
   public getUpdatedGroup(coord: Coord): Group {
-    return new Group([...this.coords, coord])
+    return new Group([...this.coords, coord], this.field)
+  }
+
+  public getBorderSet(boardHeight: number, boardWidth: number): CoordSet {
+    const set = new CoordSet()
+    this.coords
+      .flatMap((coord) => coord.getOrthogonalNeighbors(boardHeight, boardWidth))
+      .forEach((coord) => set.add(coord))
+    return set
   }
 }
 
@@ -192,7 +221,7 @@ export class Board {
    *
    * @return {Readonly<Cell[][]>} The current state of the board.
    */
-  public get(): Readonly<Cell[][]> {
+  public getBoard(): Readonly<Cell[][]> {
     return this.board
   }
 
@@ -224,6 +253,15 @@ export class Board {
         ),
       ),
     ])
+  }
+
+  /**
+   * Get all the coordinates of the cells in the board.
+   *
+   * @return {Coord[]} An array of all the coordinates of the cells in the board.
+   */
+  public getBoardCoordinates(): Coord[] {
+    return this.board.flat().map((cell) => cell.coordinates)
   }
 }
 
@@ -294,7 +332,7 @@ export class State {
     const oldGroup = this._groups.get(groupId)
     const newGroup =
       oldGroup === undefined
-        ? new Group([coord])
+        ? new Group([coord], cellToUpdate.field)
         : oldGroup.getUpdatedGroup(coord)
 
     // return a new group map with the updated group
