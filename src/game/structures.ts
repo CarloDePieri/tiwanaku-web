@@ -64,6 +64,12 @@ export class Coord {
       ({ y, x }) => x >= 0 && x < boardWidth && y >= 0 && y < boardHeight,
     )
   }
+
+  getNeighbors(board: Board): Coord[] {
+    return board
+      .getBoardCoordinates()
+      .filter((coord) => this.isNeighborOf(coord))
+  }
 }
 
 /**

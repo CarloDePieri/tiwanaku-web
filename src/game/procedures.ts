@@ -31,6 +31,21 @@ function pickRandom<T>(array: Array<T>): T | null {
     : array[Math.floor(Math.random() * array.length)]
 }
 
+// noinspection JSValidateJSDoc
+/**
+ * Shuffles an array using the Fisher-Yates (also known as Knuth) shuffle algorithm.
+ *
+ * @param {T[]} array - The array to be shuffled.
+ * @return {T[]} The shuffled array.
+ */
+function shuffle<T>(array: T[]): T[] {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[array[i], array[j]] = [array[j], array[i]]
+  }
+  return array
+}
+
 /**
  * Seed an empty board with ones. This also defines the number of groups.
  *
@@ -39,6 +54,7 @@ function pickRandom<T>(array: Array<T>): T | null {
  * @param maxGroups
  */
 function seedOnes(board: Board, minGroups: number, maxGroups: number): State {
+  // TODO refactor this, it should use the same logic as the other function for seeding crops
   let candidate: State
 
   // Keep trying until the number of groups is within the desired range
@@ -92,6 +108,8 @@ function tryToDivideFields(
   state: State,
   maxInvalidTries: number,
 ): State | null {
+  // TODO break up this function, it's too big
+  // TODO try other algorithms to distribute fields, a breath-first approach or a hybrid one (breath with chances to go deep instead)
   let newState: State
   let validConfig
   let invalidTries = 0
@@ -168,25 +186,184 @@ function tryToDivideFields(
   return newState
 }
 
-// TODO
-export function generateBoard(size: "small" | "standard"): Board {
-  // Define the board parameters
-  const boardHeight = 5
-  const boardWidth = size === "small" ? 5 : 9
-  const minGroups = size === "small" ? 6 : 10
-  const maxGroups = size === "small" ? 8 : 14
+interface GroupInfo {
+  groupId: number
+  length: number
+}
 
-  // Prepare an empty board
-  const board = Board.Empty(boardWidth, boardHeight)
-
-  let state: State | null = null
+function tryCrop(
+  size: Size,
+  state: State,
+  groups: GroupInfo[],
+  maxInvalidTries: number,
+): State | null {
+  let newState: State | null = null
+  let invalidTries = 0
+  let groupsIds: number[]
 
   do {
-    state = seedOnes(board, minGroups, maxGroups)
-    state = tryToDivideFields(state, 10)
-  } while (state === null)
+    newState = state
+    groupsIds = groups.map(({ groupId }) => groupId)
+    let doneGroups = 0
 
-  console.log(state)
+    for (const groupId of groupsIds) {
+      const validCoords: Coord[] = shuffle(
+        newState.groups.get(groupId)!.coords,
+      ).filter(
+        (coord) => newState?.board.getCell(coord.x, coord.y).size === undefined,
+      )
+      let candidateFound = false
 
-  return state.board
+      for (const candidateCoord of validCoords) {
+        // check if the cell is surrounded by cells of the same size
+        const isSameSizeNear = candidateCoord
+          .getNeighbors(newState?.board)
+          .map((coord) => newState?.board.getCell(coord.x, coord.y).size)
+          .some((cellSize) => cellSize === size)
+
+        if (!isSameSizeNear) {
+          newState = newState.getUpdatedState({
+            ...newState?.board.getCell(candidateCoord.x, candidateCoord.y),
+            size: size,
+          })
+          candidateFound = true
+          // we found a valid candidate for this group, no need to keep looking
+          break
+        }
+      }
+
+      if (candidateFound) {
+        doneGroups++
+      } else {
+        invalidTries++
+        // a size could not be placed in this group, no need to keep trying
+        break
+      }
+    }
+
+    // if it's a valid configuration, return the state
+    if (doneGroups === groups.length) {
+      return newState
+    }
+  } while (invalidTries <= maxInvalidTries)
+  // If we got here, we couldn't find a valid configuration
+  return null
+}
+
+interface Configuration {
+  state: State
+  lives: number
+}
+
+function tryToGrowCrops(
+  state: State,
+  maxInvalidTries: number,
+  configurationLives: number,
+): State | null {
+  const groupsToGrow: GroupInfo[] = Array.from(state.groups.entries())
+    // sort them from largest to smallest
+    .sort((a, b) => b[1].coords.length - a[1].coords.length)
+    // map to the groupId
+    .map(([groupId, group]) => ({
+      groupId: groupId,
+      length: group.coords.length,
+    }))
+
+  // use a stack to keep track of possible configurations
+  const configurationStack: Configuration[] = [
+    { state: state, lives: configurationLives },
+  ]
+
+  while (configurationStack.length > 0) {
+    // there's no candidate configuration for this size, let's build one
+    const currentSize = configurationStack.length
+
+    console.log("Trying to grow crops", currentSize + 1)
+
+    const configState = tryCrop(
+      (currentSize + 1) as Size,
+      configurationStack[configurationStack.length - 1].state,
+      groupsToGrow.filter(({ length }) => length > currentSize),
+      maxInvalidTries,
+    )
+    // TODO keep a blacklist of dead board hash and check the new config against it
+
+    if (configState !== null) {
+      if (currentSize === 5) {
+        // we found a valid configuration for the whole board, let's return it
+        return configState
+      } else {
+        console.log(`Crop ${currentSize + 1} has grown!`)
+        // we found a valid configuration for the current size, let's add it to the stack
+        configurationStack.push({
+          state: configState,
+          lives: configurationLives,
+        })
+      }
+    } else {
+      // we couldn't generate a valid config from the last state, let's keep track of that
+      console.log(`Crop ${currentSize + 1} could not grow.`)
+
+      const damageField = () => {
+        const currentSize = configurationStack.length
+        const lastConfig = configurationStack.length - 1
+        configurationStack[lastConfig].lives--
+        console.log(`Crop ${currentSize} lose 1 life.`)
+        if (configurationStack[lastConfig].lives === 0) {
+          console.log(`Crop ${currentSize} died.`)
+          // we tried too many times, destroy the previous configuration...
+          configurationStack.pop()
+          if (configurationStack.length > 0) {
+            // ... and damage its previous one
+            damageField()
+          }
+        }
+      }
+      damageField()
+    }
+  }
+  // if we got here, we couldn't find a valid configuration
+  return null
+}
+
+// TODO this is still blocking, it should use web workers
+export function generateBoard(size: "small" | "standard"): Promise<Board> {
+  return new Promise((resolve, reject) => {
+    // Define the board parameters
+    const boardHeight = 5
+    const boardWidth = size === "small" ? 5 : 9
+    const minGroups = size === "small" ? 6 : 10
+    const maxGroups = size === "small" ? 8 : 14
+
+    // Prepare an empty board
+    const board = Board.Empty(boardWidth, boardHeight)
+
+    let state: State | null = null
+    let invalidTries = 0
+    const maxTries = 100
+
+    do {
+      state = seedOnes(board, minGroups, maxGroups)
+      state = tryToDivideFields(state, 10)
+      if (state !== null) {
+        // TODO tune these, it's too slow on standard boards
+        //  it probably needs different tuning based on board size
+        state = tryToGrowCrops(state, 10, 10)
+        if (state !== null) {
+          console.log(
+            `Board generated successfully in ${invalidTries + 1} tries!`,
+          )
+          resolve(state.board)
+          return state.board
+        } else {
+          console.log("ERROR > Invalid configuration, trying again...")
+          invalidTries++
+        }
+      }
+    } while (invalidTries < maxTries)
+
+    console.log("ERROR > Could not generate a valid board.")
+    reject("Could not generate a valid board.")
+    return null
+  })
 }

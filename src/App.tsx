@@ -1,32 +1,54 @@
 import "./App.css"
-import Square from "./components/Square.tsx"
+import { useState, useTransition } from "react"
+import { BoardLoader } from "./components/BoardLoader.tsx"
+import GameBoard from "./components/GameBoard.tsx"
 import { generateBoard } from "./game/procedures.ts"
+import { Board } from "./game/structures.ts"
 
 function App() {
-  const board = generateBoard("small")
+  const [board, setBoard] = useState<Board>(new Board([]))
+  const [size, setSize] = useState<"small" | "standard">("small")
+
+  const [isPending, startTransition] = useTransition()
+
+  const generate = (size: "small" | "standard") => {
+    startTransition(() => {
+      setSize(size)
+      // TODO this should not block the UI
+      generateBoard(size).then((board) => {
+        setBoard(board)
+      })
+    })
+  }
+
+  const gameBoard = isPending ? (
+    <BoardLoader
+      size={size}
+      cellMargin={0.5}
+      maxVH={95}
+      maxVW={95}
+      targetVW={95}
+      targetVH={95}
+    />
+  ) : (
+    <GameBoard
+      board={board}
+      cellMargin={0.25}
+      maxVH={95}
+      maxVW={95}
+      targetVW={95}
+      targetVH={95}
+    />
+  )
+
   return (
-    <>
-      table
+    <div>
       <div>
-        {board.getBoard().map((row, y) => {
-          return (
-            // TODO fix the key
-            <div style={{ display: "flex" }} key={`row_${y}`}>
-              {row.map((_, x) => {
-                const square = board.getCell(x, y)
-                return (
-                  <Square
-                    key={`coord_${square.coordinates.x}_${square.coordinates.y}`}
-                    field={square.field}
-                    size={square.size}
-                  />
-                )
-              })}
-            </div>
-          )
-        })}
+        <button onClick={() => generate("small")}>small</button>
+        <button onClick={() => generate("standard")}>standard</button>
       </div>
-    </>
+      {gameBoard}
+    </div>
   )
 }
 

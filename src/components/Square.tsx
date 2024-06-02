@@ -12,6 +12,9 @@ import { Field, Size } from "../game/structures.ts"
 interface SquareProps {
   field: Field | undefined
   size: Size | undefined
+  width: string
+  height: string
+  margin: string
 }
 
 function getBackgroundImage(field: Field | undefined): string {
@@ -46,13 +49,19 @@ function getSizeImage(size: Size | undefined): string {
   }
 }
 
-export default function Square({ field, size }: Readonly<SquareProps>) {
+export default function Square({
+  field,
+  size,
+  height,
+  width,
+  margin,
+}: Readonly<SquareProps>) {
   return (
     <div
       style={{
-        width: "18vw",
-        height: "18vw",
-        border: "1px solid #dcdcdc",
+        width: width,
+        height: height,
+        margin: margin,
         backgroundImage: `url(${getBackgroundImage(field)})`,
         backgroundSize: "cover",
         display: "flex",
