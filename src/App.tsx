@@ -1,42 +1,21 @@
 import "./App.css"
 import { useState } from "react"
+import { useAppDispatch, useAppSelector } from "./app/hooks.ts"
 import { BoardLoader } from "./components/BoardLoader.tsx"
 import GameBoard from "./components/GameBoard.tsx"
-import { Board } from "./game/structures.ts"
-import { ComlinkPayload } from "./worker.ts"
-import * as Comlink from "comlink"
+import { generateNewBoard, selectGeneratingBoard } from "./game/gameSlice.ts"
+import { BoardSize } from "./game/structures.ts"
 
 function App() {
-  const [board, setBoard] = useState<Board>(new Board([]))
-  const [size, setSize] = useState<"small" | "standard">("small")
-  const [loading, setLoading] = useState(false)
+  const [size, setSize] = useState<BoardSize>("small")
 
-  const worker = Comlink.wrap<ComlinkPayload>(
-    new Worker(new URL("./worker.ts", import.meta.url), {
-      type: "module",
-    }),
-  )
+  const loading = useAppSelector(selectGeneratingBoard)
+  const dispatch = useAppDispatch()
 
   // TODO cancel previous request if a new one is made
-  const generate = (size: "small" | "standard") => {
-    setLoading(true)
+  const generate = (size: BoardSize) => {
     setSize(size)
-    worker
-      .generateBoard(size)
-      .then((serializedBoard) => {
-        if (serializedBoard !== null) {
-          setBoard(Board.deserialize(serializedBoard))
-        } else {
-          // TODO
-          console.log("ERROR")
-        }
-      })
-      .catch((e) => {
-        console.error(e)
-      })
-      .finally(() => {
-        setLoading(false)
-      })
+    dispatch(generateNewBoard(size))
   }
 
   const gameBoard = loading ? (
@@ -50,7 +29,6 @@ function App() {
     />
   ) : (
     <GameBoard
-      board={board}
       cellMargin={0.25}
       maxVH={95}
       maxVW={95}

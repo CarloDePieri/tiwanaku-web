@@ -7,6 +7,7 @@ import {
   Crop,
   State,
   SerializedBoard,
+  BoardSize,
 } from "./structures.ts"
 
 /**
@@ -328,9 +329,7 @@ function tryToGrowCrops(
 }
 
 // TODO docs, also explain why a serialized board is returned
-export function generateBoard(
-  size: "small" | "standard",
-): SerializedBoard | null {
+export function generateBoard(size: BoardSize): SerializedBoard | null {
   // Define the board parameters
   const boardHeight = 5
   const boardWidth = size === "small" ? 5 : 9

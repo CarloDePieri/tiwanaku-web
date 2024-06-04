@@ -1,9 +1,9 @@
-import { Board } from "../game/structures.ts"
+import { useAppSelector } from "../app/hooks.ts"
+import { selectBoard } from "../game/gameSlice.ts"
 import Square from "./Square.tsx"
 import useWindowDimensions from "./useWindowDimensions.ts"
 
 interface BoardProps {
-  board: Board
   cellMargin: number
   targetVW: number
   targetVH: number
@@ -12,13 +12,15 @@ interface BoardProps {
 }
 
 export default function GameBoard({
-  board,
   cellMargin,
   maxVW,
   maxVH,
   targetVW,
   targetVH,
 }: Readonly<BoardProps>) {
+  const board = useAppSelector(selectBoard)
+  if (board === null) return <></>
+
   const dim = useWindowDimensions()
   const screenSizeRatio = dim.width / dim.height
 
