@@ -7,11 +7,11 @@ import desertUrl from "../assets/desert.png"
 import forestUrl from "../assets/forest.png"
 import mountainUrl from "../assets/mountain.png"
 import valleyUrl from "../assets/valley.png"
-import { Field, Size } from "../game/structures.ts"
+import { Field, Crop } from "../game/structures.ts"
 
 interface SquareProps {
   field: Field | undefined
-  size: Size | undefined
+  size: Crop | undefined
   width: string
   height: string
   margin: string
@@ -19,30 +19,30 @@ interface SquareProps {
 
 function getBackgroundImage(field: Field | undefined): string {
   switch (field) {
-    case Field.Forest:
+    case Field.forest:
       return forestUrl
-    case Field.Desert:
+    case Field.desert:
       return desertUrl
-    case Field.Mountain:
+    case Field.mountain:
       return mountainUrl
-    case Field.Valley:
+    case Field.valley:
       return valleyUrl
     case undefined:
       return ""
   }
 }
 
-function getSizeImage(size: Size | undefined): string {
+function getSizeImage(size: Crop | undefined): string {
   switch (size) {
-    case Size.One:
+    case Crop.one:
       return sweetPotatoUrl
-    case Size.Two:
+    case Crop.two:
       return cocaLeafUrl
-    case Size.Three:
+    case Crop.three:
       return chiliUrl
-    case Size.Four:
+    case Crop.four:
       return cornUrl
-    case Size.Five:
+    case Crop.five:
       return quinoaUrl
     case undefined:
       return ""

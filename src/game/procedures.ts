@@ -4,8 +4,9 @@ import {
   CoordSet,
   Field,
   Group,
-  Size,
+  Crop,
   State,
+  SerializedBoard,
 } from "./structures.ts"
 
 /**
@@ -77,7 +78,7 @@ function seedOnes(board: Board, minGroups: number, maxGroups: number): State {
       candidate = candidate.getUpdatedState({
         coordinates: randomCoord,
         field: pickRandom(Object.values(Field))!,
-        size: Size.One,
+        crop: Crop.one,
         groupId: candidate.groups.size,
       })
 
@@ -159,7 +160,7 @@ function tryToDivideFields(
           newState = newState.getUpdatedState({
             groupId: groupId,
             coordinates: candidateCell,
-            size: undefined,
+            crop: undefined,
             field: group.field,
           })
         } else {
@@ -192,7 +193,7 @@ interface GroupInfo {
 }
 
 function tryCrop(
-  size: Size,
+  crop: Crop,
   state: State,
   groups: GroupInfo[],
   maxInvalidTries: number,
@@ -210,21 +211,21 @@ function tryCrop(
       const validCoords: Coord[] = shuffle(
         newState.groups.get(groupId)!.coords,
       ).filter(
-        (coord) => newState?.board.getCell(coord.x, coord.y).size === undefined,
+        (coord) => newState?.board.getCell(coord.x, coord.y).crop === undefined,
       )
       let candidateFound = false
 
       for (const candidateCoord of validCoords) {
-        // check if the cell is surrounded by cells of the same size
-        const isSameSizeNear = candidateCoord
+        // check if the cell is surrounded by cells of the same crop
+        const isSameCropNear = candidateCoord
           .getNeighbors(newState?.board)
-          .map((coord) => newState?.board.getCell(coord.x, coord.y).size)
-          .some((cellSize) => cellSize === size)
+          .map((coord) => newState?.board.getCell(coord.x, coord.y).crop)
+          .some((cellCrop) => cellCrop === crop)
 
-        if (!isSameSizeNear) {
+        if (!isSameCropNear) {
           newState = newState.getUpdatedState({
             ...newState?.board.getCell(candidateCoord.x, candidateCoord.y),
-            size: size,
+            crop: crop,
           })
           candidateFound = true
           // we found a valid candidate for this group, no need to keep looking
@@ -236,7 +237,7 @@ function tryCrop(
         doneGroups++
       } else {
         invalidTries++
-        // a size could not be placed in this group, no need to keep trying
+        // a crop could not be placed in this group, no need to keep trying
         break
       }
     }
@@ -275,13 +276,13 @@ function tryToGrowCrops(
   ]
 
   while (configurationStack.length > 0) {
-    // there's no candidate configuration for this size, let's build one
+    // there's no candidate configuration for this crop size, let's build one
     const currentSize = configurationStack.length
 
     console.log("Trying to grow crops", currentSize + 1)
 
     const configState = tryCrop(
-      (currentSize + 1) as Size,
+      (currentSize + 1) as Crop,
       configurationStack[configurationStack.length - 1].state,
       groupsToGrow.filter(({ length }) => length > currentSize),
       maxInvalidTries,
@@ -326,44 +327,42 @@ function tryToGrowCrops(
   return null
 }
 
-// TODO this is still blocking, it should use web workers
-export function generateBoard(size: "small" | "standard"): Promise<Board> {
-  return new Promise((resolve, reject) => {
-    // Define the board parameters
-    const boardHeight = 5
-    const boardWidth = size === "small" ? 5 : 9
-    const minGroups = size === "small" ? 6 : 10
-    const maxGroups = size === "small" ? 8 : 14
+// TODO docs, also explain why a serialized board is returned
+export function generateBoard(
+  size: "small" | "standard",
+): SerializedBoard | null {
+  // Define the board parameters
+  const boardHeight = 5
+  const boardWidth = size === "small" ? 5 : 9
+  const minGroups = size === "small" ? 6 : 10
+  const maxGroups = size === "small" ? 8 : 14
 
-    // Prepare an empty board
-    const board = Board.Empty(boardWidth, boardHeight)
+  // Prepare an empty board
+  const board = Board.Empty(boardWidth, boardHeight)
 
-    let state: State | null = null
-    let invalidTries = 0
-    const maxTries = 100
+  let state: State | null = null
+  let invalidTries = 0
+  const maxTries = 100
 
-    do {
-      state = seedOnes(board, minGroups, maxGroups)
-      state = tryToDivideFields(state, 10)
+  do {
+    state = seedOnes(board, minGroups, maxGroups)
+    state = tryToDivideFields(state, 10)
+    if (state !== null) {
+      // TODO tune these, it's too slow on standard boards
+      //  it probably needs different tuning based on board size
+      state = tryToGrowCrops(state, 10, 10)
       if (state !== null) {
-        // TODO tune these, it's too slow on standard boards
-        //  it probably needs different tuning based on board size
-        state = tryToGrowCrops(state, 10, 10)
-        if (state !== null) {
-          console.log(
-            `Board generated successfully in ${invalidTries + 1} tries!`,
-          )
-          resolve(state.board)
-          return state.board
-        } else {
-          console.log("ERROR > Invalid configuration, trying again...")
-          invalidTries++
-        }
+        console.log(
+          `Board generated successfully in ${invalidTries + 1} tries!`,
+        )
+        return state.board.serialize()
+      } else {
+        console.log("ERROR > Invalid configuration, trying again...")
+        invalidTries++
       }
-    } while (invalidTries < maxTries)
+    }
+  } while (invalidTries < maxTries)
 
-    console.log("ERROR > Could not generate a valid board.")
-    reject("Could not generate a valid board.")
-    return null
-  })
+  console.log("ERROR > Could not generate a valid board.")
+  return null
 }

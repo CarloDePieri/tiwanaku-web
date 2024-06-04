@@ -1,27 +1,45 @@
 import "./App.css"
-import { useState, useTransition } from "react"
+import { useState } from "react"
 import { BoardLoader } from "./components/BoardLoader.tsx"
 import GameBoard from "./components/GameBoard.tsx"
-import { generateBoard } from "./game/procedures.ts"
 import { Board } from "./game/structures.ts"
+import { ComlinkPayload } from "./worker.ts"
+import * as Comlink from "comlink"
 
 function App() {
   const [board, setBoard] = useState<Board>(new Board([]))
   const [size, setSize] = useState<"small" | "standard">("small")
+  const [loading, setLoading] = useState(false)
 
-  const [isPending, startTransition] = useTransition()
+  const worker = Comlink.wrap<ComlinkPayload>(
+    new Worker(new URL("./worker.ts", import.meta.url), {
+      type: "module",
+    }),
+  )
 
+  // TODO cancel previous request if a new one is made
   const generate = (size: "small" | "standard") => {
-    startTransition(() => {
-      setSize(size)
-      // TODO this should not block the UI
-      generateBoard(size).then((board) => {
-        setBoard(board)
+    setLoading(true)
+    setSize(size)
+    worker
+      .generateBoard(size)
+      .then((serializedBoard) => {
+        if (serializedBoard !== null) {
+          setBoard(Board.deserialize(serializedBoard))
+        } else {
+          // TODO
+          console.log("ERROR")
+        }
       })
-    })
+      .catch((e) => {
+        console.error(e)
+      })
+      .finally(() => {
+        setLoading(false)
+      })
   }
 
-  const gameBoard = isPending ? (
+  const gameBoard = loading ? (
     <BoardLoader
       size={size}
       cellMargin={0.5}

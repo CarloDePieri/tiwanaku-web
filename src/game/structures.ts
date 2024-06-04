@@ -144,26 +144,41 @@ export class Group {
 }
 
 export enum Field {
-  Forest = "forest",
-  Desert = "desert",
-  Mountain = "mountain",
-  Valley = "valley",
+  forest = "forest",
+  desert = "desert",
+  mountain = "mountain",
+  valley = "valley",
 }
 
-export enum Size {
-  One = 1,
-  Two = 2,
-  Three = 3,
-  Four = 4,
-  Five = 5,
+export enum Crop {
+  one = 1,
+  two = 2,
+  three = 3,
+  four = 4,
+  five = 5,
 }
 
-type Cell = Readonly<{
+export type Cell = Readonly<{
   groupId: number | undefined
   coordinates: Coord
   field: Field | undefined
-  size: Size | undefined
+  crop: Crop | undefined
 }>
+
+/**
+ * A serialized version of a Board object.
+ */
+export type SerializedBoard = {
+  board: {
+    field: "mountain" | "valley" | "forest" | "desert" | undefined
+    crop: 1 | 2 | 3 | 4 | 5 | undefined
+    coordinates: {
+      x: number
+      y: number
+    }
+    groupId: number | undefined
+  }[][]
+}
 
 /**
  * Class representing a game board. The underlying structure is immutable.
@@ -198,10 +213,54 @@ export class Board {
               groupId: undefined,
               coordinates: new Coord(j, i),
               field: undefined,
-              size: undefined,
+              crop: undefined,
             })),
         ),
     )
+  }
+
+  /**
+   * Create a new Board instance from a serialized form.
+   * This method is useful for restoring the state of the board from a stored or transmitted serialized form.
+   *
+   * @param {SerializedBoard} serializedBoard - The serialized form of the board.
+   * @return {Board} The new Board instance.
+   */
+  public static deserialize(serializedBoard: SerializedBoard): Board {
+    const board = serializedBoard.board.map((row) =>
+      row.map((cell) => ({
+        groupId: cell.groupId,
+        coordinates: new Coord(cell.coordinates.x, cell.coordinates.y),
+        field: cell.field ? (cell.field as Field) : undefined,
+        crop: cell.crop ? (cell.crop as Crop) : undefined,
+      })),
+    )
+    return new Board(board)
+  }
+
+  /**
+   * Convert the current state of the board into a serialized form.
+   * The serialized form is an object that can be easily converted into a JSON string.
+   * This method is useful for storing the state of the board or transmitting it over different threads.
+   *
+   * @return {SerializedBoard} The serialized form of the board.
+   */
+  public serialize(): SerializedBoard {
+    return {
+      board: this.board.map((row) =>
+        row.map((cell) => ({
+          groupId: cell.groupId,
+          coordinates: {
+            x: cell.coordinates.x,
+            y: cell.coordinates.y,
+          },
+          field: cell.field
+            ? (cell.field as "mountain" | "valley" | "forest" | "desert")
+            : undefined,
+          crop: cell.crop ? (cell.crop as 1 | 2 | 3 | 4 | 5) : undefined,
+        })),
+      ),
+    }
   }
 
   /**

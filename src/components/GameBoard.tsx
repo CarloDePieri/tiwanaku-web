@@ -88,7 +88,7 @@ export default function GameBoard({
                   margin={`${cellMargin}${unit}`}
                   key={`coord_${square.coordinates.x}_${square.coordinates.y}`}
                   field={square.field}
-                  size={square.size}
+                  size={square.crop}
                 />
               )
             })}
