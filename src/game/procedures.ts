@@ -328,7 +328,7 @@ function tryToGrowCrops(
   return null
 }
 
-// TODO docs, also explain why a serialized board is returned
+// TODO docs, also explain why a serialized board is returned (both redux and comlink need it serialized)
 export function generateBoard(size: BoardSize): SerializedBoard | null {
   // Define the board parameters
   const boardHeight = 5
@@ -347,7 +347,7 @@ export function generateBoard(size: BoardSize): SerializedBoard | null {
     state = seedOnes(board, minGroups, maxGroups)
     state = tryToDivideFields(state, 10)
     if (state !== null) {
-      // TODO tune these, it's too slow on standard boards
+      // TODO tune these, it's still too slow on standard boards
       //  it probably needs different tuning based on board size
       state = tryToGrowCrops(state, 10, 10)
       if (state !== null) {

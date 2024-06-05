@@ -1,4 +1,15 @@
-import { createAsyncThunk, createSelector, createSlice } from "@reduxjs/toolkit"
+import {
+  createAsyncThunk,
+  createSelector,
+  createSlice,
+  SafePromise,
+} from "@reduxjs/toolkit"
+import {
+  AsyncThunkConfig,
+  AsyncThunkFulfilledActionCreator,
+  AsyncThunkRejectedActionCreator,
+  // @ts-expect-error - no types for createAsyncThunk
+} from "@reduxjs/toolkit/dist/createAsyncThunk"
 import * as Comlink from "comlink"
 import { RootState } from "../app/store.ts"
 import { ComlinkPayload } from "../worker.ts"
@@ -14,20 +25,40 @@ const initialState: GameState = {
   board: null,
 }
 
+export type GenerateNewBoardPromise = SafePromise<
+  | ReturnType<
+      AsyncThunkFulfilledActionCreator<SerializedBoard | null, BoardSize>
+    >
+  | ReturnType<AsyncThunkRejectedActionCreator<BoardSize, AsyncThunkConfig>>
+> & {
+  abort: (reason?: string) => void
+  requestId: string
+  arg: BoardSize
+  unwrap: () => Promise<SerializedBoard | null>
+}
+
+let webWorker: Worker
+
 // Async reducer for generating the board in a web worker thread
 const generateNewBoard = createAsyncThunk(
   "gameState/generateBoard",
   async (size: BoardSize) => {
-    // Prepare the web worker
-    const worker = Comlink.wrap<ComlinkPayload>(
-      new Worker(new URL("../worker.ts", import.meta.url), {
-        type: "module",
-      }),
-    )
+    // Spin up a web worker
+    webWorker = new Worker(new URL("../worker.ts", import.meta.url), {
+      type: "module",
+    })
+    const link = Comlink.wrap<ComlinkPayload>(webWorker)
     // Run the generateBoard function in the web worker
-    return await worker.generateBoard(size)
+    return await link.generateBoard(size)
   },
 )
+
+const abortNewBoardGeneration = (promise: GenerateNewBoardPromise) => {
+  // terminate the web worker who's generating the board
+  webWorker?.terminate()
+  // reject the promise
+  promise.abort()
+}
 
 export const gameSlice = createSlice({
   name: "gameState",
@@ -43,9 +74,9 @@ export const gameSlice = createSlice({
         state.board = action.payload
         state.generatingBoard = false
       })
-      .addCase(generateNewBoard.rejected, (state) => {
+      .addCase(generateNewBoard.rejected, (state, { meta: { aborted } }) => {
         state.generatingBoard = false
-        // TODO signal some error message
+        if (aborted) console.log("Board generation aborted by the user")
       })
   },
 })
@@ -59,6 +90,6 @@ export const selectGeneratingBoard = (state: RootState) => state.generatingBoard
 
 // Actions
 // export const {} = gameSlice.actions
-export { generateNewBoard }
+export { generateNewBoard, abortNewBoardGeneration }
 
 export default gameSlice.reducer

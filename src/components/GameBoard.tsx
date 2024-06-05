@@ -18,10 +18,11 @@ export default function GameBoard({
   targetVW,
   targetVH,
 }: Readonly<BoardProps>) {
+  const dim = useWindowDimensions()
   const board = useAppSelector(selectBoard)
+
   if (board === null) return <></>
 
-  const dim = useWindowDimensions()
   const screenSizeRatio = dim.width / dim.height
 
   const isSmall = board.width === 5

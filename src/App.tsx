@@ -3,19 +3,33 @@ import { useState } from "react"
 import { useAppDispatch, useAppSelector } from "./app/hooks.ts"
 import { BoardLoader } from "./components/BoardLoader.tsx"
 import GameBoard from "./components/GameBoard.tsx"
-import { generateNewBoard, selectGeneratingBoard } from "./game/gameSlice.ts"
+import {
+  abortNewBoardGeneration,
+  generateNewBoard,
+  GenerateNewBoardPromise,
+  selectGeneratingBoard,
+} from "./game/gameSlice.ts"
 import { BoardSize } from "./game/structures.ts"
 
 function App() {
   const [size, setSize] = useState<BoardSize>("small")
+  const [promise, setPromise] = useState<GenerateNewBoardPromise | null>(null)
 
   const loading = useAppSelector(selectGeneratingBoard)
   const dispatch = useAppDispatch()
 
-  // TODO cancel previous request if a new one is made
+  function abortGeneration() {
+    // stop the current generation
+    if (promise) abortNewBoardGeneration(promise)
+  }
+
   const generate = (size: BoardSize) => {
+    // if there was a previous request, cancel it
+    if (loading) {
+      abortGeneration()
+    }
     setSize(size)
-    dispatch(generateNewBoard(size))
+    setPromise(dispatch(generateNewBoard(size)))
   }
 
   const gameBoard = loading ? (
@@ -42,6 +56,12 @@ function App() {
       <div>
         <button onClick={() => generate("small")}>small</button>
         <button onClick={() => generate("standard")}>standard</button>
+        {loading && (
+          <>
+            <span> Generating... </span>
+            <button onClick={() => abortGeneration()}>Abort</button>
+          </>
+        )}
       </div>
       {gameBoard}
     </div>
