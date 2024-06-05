@@ -165,6 +165,8 @@ export type Cell = Readonly<{
   coordinates: Coord
   field: Field | undefined
   crop: Crop | undefined
+  hiddenField: boolean
+  hiddenCrop: boolean
 }>
 
 /**
@@ -179,6 +181,8 @@ export type SerializedBoard = {
       y: number
     }
     groupId: number | undefined
+    hiddenField: boolean
+    hiddenCrop: boolean
   }[][]
 }
 
@@ -216,6 +220,8 @@ export class Board {
               coordinates: new Coord(j, i),
               field: undefined,
               crop: undefined,
+              hiddenField: true,
+              hiddenCrop: true,
             })),
         ),
     )
@@ -235,6 +241,8 @@ export class Board {
         coordinates: new Coord(cell.coordinates.x, cell.coordinates.y),
         field: cell.field ? (cell.field as Field) : undefined,
         crop: cell.crop ? (cell.crop as Crop) : undefined,
+        hiddenField: cell.hiddenField,
+        hiddenCrop: cell.hiddenCrop,
       })),
     )
     return new Board(board)
@@ -260,6 +268,8 @@ export class Board {
             ? (cell.field as "mountain" | "valley" | "forest" | "desert")
             : undefined,
           crop: cell.crop ? (cell.crop as 1 | 2 | 3 | 4 | 5) : undefined,
+          hiddenField: cell.hiddenField,
+          hiddenCrop: cell.hiddenCrop,
         })),
       ),
     }

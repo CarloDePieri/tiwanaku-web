@@ -33,19 +33,43 @@ function pickRandom<T>(array: Array<T>): T | null {
     : array[Math.floor(Math.random() * array.length)]
 }
 
+// noinspection JSValidateJSDoc,JSUnusedLocalSymbols
+/**
+ * Pop a random element from an array. If the array is empty, returns null.
+ *
+ * TODO check if an algorithm built around this instead of shuffle would be faster
+ *
+ * @param {Array<T>} array - The array to pop from.
+ * @return {T | null} A random element popped from the given array, or null if the array is empty.
+ */
+// @ts-expect-error - unused function, but might be useful in the future
+function popRandom<T>(array: Array<T>): T | null {
+  if (array.length > 0) {
+    // pick a random index and the last one
+    const index = Math.floor(Math.random() * array.length)
+    const lastIndex = array.length - 1
+    // switch the random element with the last one
+    ;[array[index], array[lastIndex]] = [array[lastIndex], array[index]]
+    // pop the element and return it
+    return array.pop()!
+  }
+  return null
+}
+
 // noinspection JSValidateJSDoc
 /**
- * Shuffles an array using the Fisher-Yates (also known as Knuth) shuffle algorithm.
+ * Return a copy of the given array shuffled with the Fisher-Yates (also known as Knuth) algorithm.
  *
  * @param {T[]} array - The array to be shuffled.
  * @return {T[]} The shuffled array.
  */
-function shuffle<T>(array: T[]): T[] {
-  for (let i = array.length - 1; i > 0; i--) {
+function shuffledCopy<T>(array: T[]): T[] {
+  const newArray = array.slice(0)
+  for (let i = newArray.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1))
-    ;[array[i], array[j]] = [array[j], array[i]]
+    ;[newArray[i], newArray[j]] = [newArray[j], newArray[i]]
   }
-  return array
+  return newArray
 }
 
 /**
@@ -81,6 +105,8 @@ function seedOnes(board: Board, minGroups: number, maxGroups: number): State {
         field: pickRandom(Object.values(Field))!,
         crop: Crop.one,
         groupId: candidate.groups.size,
+        hiddenField: true,
+        hiddenCrop: true,
       })
 
       // update the valid cell for the next one
@@ -163,6 +189,8 @@ function tryToDivideFields(
             coordinates: candidateCell,
             crop: undefined,
             field: group.field,
+            hiddenField: true,
+            hiddenCrop: true,
           })
         } else {
           // otherwise add it to the blacklist
@@ -193,48 +221,82 @@ interface GroupInfo {
   length: number
 }
 
-function tryCrop(
+/**
+ * Try to place a crop in a set of valid coordinates.
+ * Returns the new state if a valid configuration is found, null otherwise.
+ *
+ * @param {State} state - The initial state.
+ * @param {Crop} crop - The crop to place.
+ * @param {Coord[]} validCoords - The list of valid coordinates where the crop can be placed.
+ */
+function tryCropPlacement(
+  state: State,
+  crop: Crop,
+  validCoords: Coord[],
+): State | null {
+  // try every valid coord (from a shuffled list, so the order is random)
+  for (const candidateCoord of shuffledCopy(validCoords)) {
+    // check if the cell is surrounded by cells of the same crop
+    const isSameCropNear = candidateCoord
+      .getNeighbors(state?.board)
+      .map((coord) => state?.board.getCell(coord.x, coord.y).crop)
+      .some((cellCrop) => cellCrop === crop)
+    if (!isSameCropNear) {
+      // we found a valid crop placement, return the new state
+      return state.getUpdatedState({
+        ...state?.board.getCell(candidateCoord.x, candidateCoord.y),
+        crop: crop,
+      })
+    }
+  }
+  // if we got here no valid candidate was found, return null
+  return null
+}
+
+/**
+ * // TODO
+ *
+ * @param crop
+ * @param state
+ * @param groups
+ * @param maxInvalidTries
+ */
+function tryCropSizePlacement(
   crop: Crop,
   state: State,
   groups: GroupInfo[],
   maxInvalidTries: number,
 ): State | null {
-  let newState: State | null = null
+  let newState: State
   let invalidTries = 0
-  let groupsIds: number[]
 
+  // select only the groups that may contain the given crop and sort them from the largest to the smallest
+  const groupsIds = groups.map((group) => group.groupId)
+
+  // TODO find a way to bring these inside
+  // const groupsIds = Array.from(state.groups.entries())
+  //   .filter(([, group]) => group.coords.length >= crop)
+  //   // sort them from smallest to the largest
+  //   .sort((a, b) => a[1].coords.length - b[1].coords.length)
+  //   // map to the groupId
+  //   .map(([groupId]) => groupId)
+
+  // while we haven't tried too many invalid configurations...
   do {
     newState = state
-    groupsIds = groups.map(({ groupId }) => groupId)
     let doneGroups = 0
 
     for (const groupId of groupsIds) {
-      const validCoords: Coord[] = shuffle(
-        newState.groups.get(groupId)!.coords,
-      ).filter(
-        (coord) => newState?.board.getCell(coord.x, coord.y).crop === undefined,
-      )
-      let candidateFound = false
+      const validCoords: Coord[] = newState.groups
+        .get(groupId)!
+        .coords.filter(
+          (coord) =>
+            newState?.board.getCell(coord.x, coord.y).crop === undefined,
+        )
 
-      for (const candidateCoord of validCoords) {
-        // check if the cell is surrounded by cells of the same crop
-        const isSameCropNear = candidateCoord
-          .getNeighbors(newState?.board)
-          .map((coord) => newState?.board.getCell(coord.x, coord.y).crop)
-          .some((cellCrop) => cellCrop === crop)
-
-        if (!isSameCropNear) {
-          newState = newState.getUpdatedState({
-            ...newState?.board.getCell(candidateCoord.x, candidateCoord.y),
-            crop: crop,
-          })
-          candidateFound = true
-          // we found a valid candidate for this group, no need to keep looking
-          break
-        }
-      }
-
-      if (candidateFound) {
+      const candidateState = tryCropPlacement(newState, crop, validCoords)
+      if (candidateState !== null) {
+        newState = candidateState
         doneGroups++
       } else {
         invalidTries++
@@ -252,9 +314,54 @@ function tryCrop(
   return null
 }
 
-interface Configuration {
-  state: State
-  lives: number
+class ConfigurationStack {
+  private readonly configurations: [State, number][]
+  private readonly configurationsLives: number
+
+  constructor(state: State, configurationLives: number) {
+    this.configurationsLives = configurationLives
+    this.configurations = [[state, configurationLives]]
+  }
+
+  public get lastCrop(): Crop {
+    return this.configurations.length as Crop
+  }
+
+  public get lastState(): State {
+    return this.configurations[this.configurations.length - 1][0]
+  }
+
+  public get nextCrop(): Crop {
+    return (this.configurations.length + 1) as Crop
+  }
+
+  public push(state: State): void {
+    this.configurations.push([state, this.configurationsLives])
+  }
+
+  public isComplete(): boolean {
+    return this.configurations.length === 5
+  }
+
+  public isAlive(): boolean {
+    return this.configurations.length >= 1
+  }
+
+  public damageCrop(): void {
+    // damage the last configuration
+    const lastIndex = this.configurations.length - 1
+    this.configurations[lastIndex][1]--
+    console.log(`Crop ${this.lastCrop} lose 1 life.`)
+    if (this.configurations[lastIndex][1] === 0) {
+      // we tried too many times, destroy the previous configuration...
+      this.configurations.pop()
+      console.log(`Crop ${this.lastCrop} died.`)
+      if (this.isAlive()) {
+        // ... and damage its previous one
+        this.damageCrop()
+      }
+    }
+  }
 }
 
 function tryToGrowCrops(
@@ -262,6 +369,8 @@ function tryToGrowCrops(
   maxInvalidTries: number,
   configurationLives: number,
 ): State | null {
+  const configStack = new ConfigurationStack(state, configurationLives)
+
   const groupsToGrow: GroupInfo[] = Array.from(state.groups.entries())
     // sort them from largest to smallest
     .sort((a, b) => b[1].coords.length - a[1].coords.length)
@@ -271,60 +380,32 @@ function tryToGrowCrops(
       length: group.coords.length,
     }))
 
-  // use a stack to keep track of possible configurations
-  const configurationStack: Configuration[] = [
-    { state: state, lives: configurationLives },
-  ]
+  while (configStack.isAlive()) {
+    const crop = configStack.nextCrop
+    console.log("Trying to grow crops", crop)
 
-  while (configurationStack.length > 0) {
-    // there's no candidate configuration for this crop size, let's build one
-    const currentSize = configurationStack.length
-
-    console.log("Trying to grow crops", currentSize + 1)
-
-    const configState = tryCrop(
-      (currentSize + 1) as Crop,
-      configurationStack[configurationStack.length - 1].state,
-      groupsToGrow.filter(({ length }) => length > currentSize),
+    const candidateState = tryCropSizePlacement(
+      crop,
+      configStack.lastState,
+      groupsToGrow.filter(({ length }) => length >= crop),
       maxInvalidTries,
     )
     // TODO keep a blacklist of dead board hash and check the new config against it
+    if (candidateState !== null) {
+      // this is a valid configuration for this crop size, let's add it to the stack
+      configStack.push(candidateState)
+      console.log(`Crop ${crop} has grown!`)
 
-    if (configState !== null) {
-      if (currentSize === 5) {
-        // we found a valid configuration for the whole board, let's return it
-        return configState
-      } else {
-        console.log(`Crop ${currentSize + 1} has grown!`)
-        // we found a valid configuration for the current size, let's add it to the stack
-        configurationStack.push({
-          state: configState,
-          lives: configurationLives,
-        })
+      if (configStack.isComplete()) {
+        // this is a valid configuration for the whole board, let's return it
+        return candidateState
       }
     } else {
-      // we couldn't generate a valid config from the last state, let's keep track of that
-      console.log(`Crop ${currentSize + 1} could not grow.`)
-
-      const damageField = () => {
-        const currentSize = configurationStack.length
-        const lastConfig = configurationStack.length - 1
-        configurationStack[lastConfig].lives--
-        console.log(`Crop ${currentSize} lose 1 life.`)
-        if (configurationStack[lastConfig].lives === 0) {
-          console.log(`Crop ${currentSize} died.`)
-          // we tried too many times, destroy the previous configuration...
-          configurationStack.pop()
-          if (configurationStack.length > 0) {
-            // ... and damage its previous one
-            damageField()
-          }
-        }
-      }
-      damageField()
+      // damage the last crop, since it couldn't grow the next one
+      console.log(`Crop ${crop} could not grow.`)
+      configStack.damageCrop()
     }
   }
-  // if we got here, we couldn't find a valid configuration
   return null
 }
 
