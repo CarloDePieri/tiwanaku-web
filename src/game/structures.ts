@@ -280,6 +280,10 @@ export class Board {
     }
   }
 
+  public get hash(): string {
+    return JSON.stringify(this.board.flat())
+  }
+
   /**
    * Get the height of the board.
    *

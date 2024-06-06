@@ -216,11 +216,6 @@ function tryToDivideFields(
   return newState
 }
 
-interface GroupInfo {
-  groupId: number
-  length: number
-}
-
 /**
  * Try to place a crop in a set of valid coordinates.
  * Returns the new state if a valid configuration is found, null otherwise.
@@ -237,6 +232,7 @@ function tryCropPlacement(
   // try every valid coord (from a shuffled list, so the order is random)
   for (const candidateCoord of shuffledCopy(validCoords)) {
     // check if the cell is surrounded by cells of the same crop
+    // TODO this can and should probably be optimized
     const isSameCropNear = candidateCoord
       .getNeighbors(state?.board)
       .map((coord) => state?.board.getCell(coord.x, coord.y).crop)
@@ -258,28 +254,17 @@ function tryCropPlacement(
  *
  * @param crop
  * @param state
- * @param groups
+ * @param groupsIds
  * @param maxInvalidTries
  */
 function tryCropSizePlacement(
   crop: Crop,
   state: State,
-  groups: GroupInfo[],
+  groupsIds: number[],
   maxInvalidTries: number,
 ): State | null {
   let newState: State
   let invalidTries = 0
-
-  // select only the groups that may contain the given crop and sort them from the largest to the smallest
-  const groupsIds = groups.map((group) => group.groupId)
-
-  // TODO find a way to bring these inside
-  // const groupsIds = Array.from(state.groups.entries())
-  //   .filter(([, group]) => group.coords.length >= crop)
-  //   // sort them from smallest to the largest
-  //   .sort((a, b) => a[1].coords.length - b[1].coords.length)
-  //   // map to the groupId
-  //   .map(([groupId]) => groupId)
 
   // while we haven't tried too many invalid configurations...
   do {
@@ -306,7 +291,7 @@ function tryCropSizePlacement(
     }
 
     // if it's a valid configuration, return the state
-    if (doneGroups === groups.length) {
+    if (doneGroups === groupsIds.length) {
       return newState
     }
   } while (invalidTries <= maxInvalidTries)
@@ -314,99 +299,115 @@ function tryCropSizePlacement(
   return null
 }
 
-class ConfigurationStack {
-  private readonly configurations: [State, number][]
-  private readonly configurationsLives: number
+/**
+ * A stack of states that keeps track of the number of tries left for each configuration.
+ */
+class StateGenerator {
+  private readonly states: [State, number, string[]][]
+  private readonly lives: number
+  private readonly maxInvalidTries: number
 
-  constructor(state: State, configurationLives: number) {
-    this.configurationsLives = configurationLives
-    this.configurations = [[state, configurationLives]]
+  constructor(lives: number, maxInvalidTries: number) {
+    this.lives = lives
+    this.maxInvalidTries = maxInvalidTries
+    this.states = []
   }
 
-  public get lastCrop(): Crop {
-    return this.configurations.length as Crop
+  // TODO docs
+  public generate(state: State): State | null {
+    // Start with the initial state
+    this.push(state)
+
+    // prepare the groups to grow from there
+    const groupsToGrow = Array.from(this.lastState.groups.entries())
+      // sort them from smallest to the largest (since the smallest is the hardest to grow)
+      .sort((a, b) => a[1].coords.length - b[1].coords.length)
+      // map to the groupID and the group length
+      .map(([groupId, group]) => [groupId, group.coords.length])
+
+    while (this.isAlive()) {
+      if (this.isComplete()) {
+        // this is a valid configuration for the whole board, let's return it
+        return this.lastState
+      }
+
+      const crop = this.nextCrop
+      console.log("Trying to grow crop", crop)
+
+      const candidateState = tryCropSizePlacement(
+        crop,
+        this.lastState,
+        groupsToGrow
+          // select only the groups that are big enough to grow this crop
+          .filter(([, length]) => length >= crop)
+          // map to the groupID
+          .map(([groupId]) => groupId),
+        this.maxInvalidTries,
+      )
+      if (
+        candidateState !== null &&
+        !this.lastBlacklist.includes(candidateState.board.hash)
+      ) {
+        // this is a valid configuration for this crop size, let's add it to the stack
+        this.push(candidateState)
+        console.log(`Crop ${crop} has grown!`)
+      } else {
+        // damage the last crop, since it couldn't grow the next one
+        console.log(`Crop ${crop} could not grow.`)
+        this.damageCrop()
+      }
+    }
+    return null
   }
 
-  public get lastState(): State {
-    return this.configurations[this.configurations.length - 1][0]
+  private get lastCrop(): Crop {
+    return this.states.length as Crop
   }
 
-  public get nextCrop(): Crop {
-    return (this.configurations.length + 1) as Crop
+  private get lastState(): State {
+    return this.states[this.states.length - 1][0]
   }
 
-  public push(state: State): void {
-    this.configurations.push([state, this.configurationsLives])
+  private get lastBlacklist(): string[] {
+    return this.states[this.states.length - 1][2]
   }
 
-  public isComplete(): boolean {
-    return this.configurations.length === 5
+  private get nextCrop(): Crop {
+    return (this.states.length + 1) as Crop
   }
 
-  public isAlive(): boolean {
-    return this.configurations.length >= 1
+  private push(state: State): void {
+    this.states.push([state, this.lives, []])
   }
 
-  public damageCrop(): void {
+  private isComplete(): boolean {
+    return this.states.length === 5
+  }
+
+  private isAlive(): boolean {
+    return this.states.length >= 1
+  }
+
+  private damageCrop(): void {
     // damage the last configuration
-    const lastIndex = this.configurations.length - 1
-    this.configurations[lastIndex][1]--
+    const lastIndex = this.states.length - 1
+    this.states[lastIndex][1]--
     console.log(`Crop ${this.lastCrop} lose 1 life.`)
-    if (this.configurations[lastIndex][1] === 0) {
+    if (this.states[lastIndex][1] === 0) {
       // we tried too many times, destroy the previous configuration...
-      this.configurations.pop()
+      const deadState = this.states.pop()
       console.log(`Crop ${this.lastCrop} died.`)
+
       if (this.isAlive()) {
-        // ... and damage its previous one
+        if (deadState) {
+          // register the hash of the dead state board in the blacklist of its predecessor
+          this.states[this.states.length - 1][2].push(deadState[0].board.hash)
+        }
+        // damage its predecessor
         this.damageCrop()
       }
     }
   }
-}
-
-function tryToGrowCrops(
-  state: State,
-  maxInvalidTries: number,
-  configurationLives: number,
-): State | null {
-  const configStack = new ConfigurationStack(state, configurationLives)
-
-  const groupsToGrow: GroupInfo[] = Array.from(state.groups.entries())
-    // sort them from largest to smallest
-    .sort((a, b) => b[1].coords.length - a[1].coords.length)
-    // map to the groupId
-    .map(([groupId, group]) => ({
-      groupId: groupId,
-      length: group.coords.length,
-    }))
-
-  while (configStack.isAlive()) {
-    const crop = configStack.nextCrop
-    console.log("Trying to grow crops", crop)
-
-    const candidateState = tryCropSizePlacement(
-      crop,
-      configStack.lastState,
-      groupsToGrow.filter(({ length }) => length >= crop),
-      maxInvalidTries,
-    )
-    // TODO keep a blacklist of dead board hash and check the new config against it
-    if (candidateState !== null) {
-      // this is a valid configuration for this crop size, let's add it to the stack
-      configStack.push(candidateState)
-      console.log(`Crop ${crop} has grown!`)
-
-      if (configStack.isComplete()) {
-        // this is a valid configuration for the whole board, let's return it
-        return candidateState
-      }
-    } else {
-      // damage the last crop, since it couldn't grow the next one
-      console.log(`Crop ${crop} could not grow.`)
-      configStack.damageCrop()
-    }
-  }
-  return null
 }
 
 // TODO docs, also explain why a serialized board is returned (both redux and comlink need it serialized)
@@ -420,6 +421,10 @@ export function generateBoard(size: BoardSize): SerializedBoard | null {
   // Prepare an empty board
   const board = Board.Empty(boardWidth, boardHeight)
 
+  // TODO tune these, it's still too slow on standard boards
+  //  it probably needs different tuning based on board size
+  const generator = new StateGenerator(10, 10)
+
   let state: State | null = null
   let invalidTries = 0
   const maxTries = 100
@@ -428,9 +433,7 @@ export function generateBoard(size: BoardSize): SerializedBoard | null {
     state = seedOnes(board, minGroups, maxGroups)
     state = tryToDivideFields(state, 10)
     if (state !== null) {
-      // TODO tune these, it's still too slow on standard boards
-      //  it probably needs different tuning based on board size
-      state = tryToGrowCrops(state, 10, 10)
+      state = generator.generate(state)
       if (state !== null) {
         console.log(
           `Board generated successfully in ${invalidTries + 1} tries!`,
