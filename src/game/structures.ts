@@ -144,10 +144,15 @@ export class Group {
   }
 
   /**
-   * Add the coordinate to a new Group object.
+   * Get a new group with the new coordinates added, if they were not already in the group.
+   * If they were, return the group as it is.
+   *
    * @return {Group} The group with the new coordinate.
    */
   public getUpdatedGroup(coord: Coord): Group {
+    // if the new coordinate is already in the group, return the group as it is
+    if (this.coords.some((c) => c.equals(coord))) return this
+    // otherwise, return a new group with the new coordinate
     return new Group([...this.coords, coord], this.field)
   }
 
