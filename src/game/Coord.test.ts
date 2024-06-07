@@ -1,7 +1,11 @@
 import { Coord } from "./Coord"
 
 describe("A coordinate", () => {
-  const coord = new Coord(1, 1)
+  let coord: Coord
+
+  beforeAll(() => {
+    coord = new Coord(1, 1)
+  })
 
   it("should recognize an equal coordinate", () => {
     const coord2 = new Coord(1, 1)

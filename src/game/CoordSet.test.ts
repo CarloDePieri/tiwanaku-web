@@ -1,7 +1,7 @@
 import { CoordSet } from "./CoordSet"
 import { Coord } from "./Coord"
 
-describe("A set of Coord", () => {
+describe("An immutable set of Coord", () => {
   let set: CoordSet
 
   beforeEach(() => {
@@ -15,20 +15,33 @@ describe("A set of Coord", () => {
   })
 
   it("should be able to add elements", () => {
-    set.add(new Coord(1, 2))
-    expect(set.has(new Coord(1, 2))).toBe(true)
+    const newSet = set.add(new Coord(1, 2))
+    expect(newSet.has(new Coord(1, 2))).toBe(true)
+    expect(set.has(new Coord(1, 2))).toBe(false)
   })
 
   it("should not add a new element twice", () => {
     // NOTE it's important that these Coord are not the same instance
-    set.add(new Coord(1, 2))
-    set.add(new Coord(1, 2))
-    expect(set.has(new Coord(1, 2))).toBe(true)
-    expect(set.size).toBe(3)
+    const newSet = set.add(new Coord(1, 2)).add(new Coord(1, 2))
+    expect(newSet.has(new Coord(1, 2))).toBe(true)
+    expect(newSet.size).toBe(3)
   })
 
   it("should be able to delete an element", () => {
-    set.delete(new Coord(1, 1))
-    expect(set.size).toBe(1)
+    const newSet = set.delete(new Coord(1, 1))
+    expect(newSet.size).toBe(1)
+    expect(set.size).toBe(2)
+  })
+
+  it("can be iterated", () => {
+    for (const coord of set) {
+      expect(coord).toBeInstanceOf(Coord)
+    }
+  })
+
+  it("can be converted to an array", () => {
+    const array = set.toArray()
+    expect(array.length).toBe(2)
+    expect(array[0]).toBeInstanceOf(Coord)
   })
 })

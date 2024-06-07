@@ -1,53 +1,91 @@
 import { Coord } from "./Coord.ts"
 
+interface Equatable<T> {
+  equals(other: T): boolean
+}
+
+// noinspection JSValidateJSDoc
 /**
- * A set of coordinates. It uses the `Coord.equals` method to check for equality.
+ * An immutable set of equatable elements.
+ * It uses the `Equatable.equals` method to check for equality.
  */
-export class CoordSet extends Set<Coord> {
-  /**
-   * Check if this set has a coordinate.
-   *
-   * @param {Coord} coord - The coordinate to check for.
-   * @return {boolean} True if the set has the coordinate, false otherwise.
-   */
-  public has(coord: Coord): boolean {
-    return this._find(coord) !== null
+class ImmutableEquatableSet<T extends Equatable<T>> {
+  private readonly _set: Set<T>
+
+  constructor(initialValues?: Iterable<T>) {
+    this._set = new Set(initialValues)
   }
 
   /**
-   * Add a coordinate to the set, if it's not already in the set.
+   * Check if this set has a value.
    *
-   * @param {Coord} coord - The coordinate to add.
-   * @return {this} The set itself.
+   * @param {T} value - The value to check for.
+   * @return {boolean} True if the set has the value, false otherwise.
    */
-  public add(coord: Coord): this {
-    if (!this.has(coord)) {
-      super.add(coord)
+  public has(value: T): boolean {
+    return this._find(value) !== null
+  }
+
+  /**
+   * Add a value to a copy of the set, if it's not already in the set.
+   *
+   * @param {T} value - The value to add.
+   * @return {this} The copy of the set with the new value.
+   */
+  public add(value: T): ImmutableEquatableSet<T> {
+    if (!this.has(value)) {
+      return new ImmutableEquatableSet([...this._set, value])
     }
     return this
   }
 
   /**
-   * Delete a coordinate from the set.
+   * Return a copy of the set without the value.
    *
-   * @param {Coord} coord - The coordinate to delete.
-   * @return {boolean} True if the coordinate was deleted, false otherwise.
+   * @param {T} value - The value to delete.
+   * @return {this} The copy of the set without the value.
    */
-  public delete(coord: Coord): boolean {
-    const found = this._find(coord)
+  public delete(value: T): ImmutableEquatableSet<T> {
+    const found = this._find(value)
     if (found) {
-      return super.delete(found)
+      const newCopy = new ImmutableEquatableSet<T>(this._set)
+      newCopy._set.delete(found)
+      return newCopy
     }
-    return false
+    return this
   }
 
-  // Find a specific coordinate in the set, using the .equals() for equality
-  private _find(coord: Coord): Coord | null {
-    for (const c of this) {
-      if (c.equals(coord)) {
-        return c
+  /**
+   * Get the size of the set.
+   *
+   * @return {number} The size of the set.
+   */
+  public get size(): number {
+    return this._set.size
+  }
+
+  // Find a specific value in the set, using the .equals() for equality
+  private _find(value: T): T | null {
+    for (const v of this._set) {
+      if (v.equals(value)) {
+        return v
       }
     }
     return null
   }
+
+  // Method to convert to array
+  toArray(): T[] {
+    return Array.from(this._set)
+  }
+
+  // Method to iterate over the set
+  [Symbol.iterator](): IterableIterator<T> {
+    return this._set[Symbol.iterator]()
+  }
 }
+
+/**
+ * An immutable set of coordinates. It uses the `Coord.equals` method to check for equality.
+ */
+export class CoordSet extends ImmutableEquatableSet<Coord> {}
