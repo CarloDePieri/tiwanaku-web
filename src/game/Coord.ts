@@ -1,9 +1,9 @@
 /**
- * Class representing a coordinate.
+ * An immutable coordinate on the game board.
  */
 export class Coord {
-  readonly x: number
-  readonly y: number
+  private readonly _x: number
+  private readonly _y: number
 
   /**
    * Create a coordinate.
@@ -12,8 +12,22 @@ export class Coord {
    * @param {number} y - The y value.
    */
   constructor(x: number, y: number) {
-    this.x = x
-    this.y = y
+    this._x = x
+    this._y = y
+  }
+
+  /**
+   * Get the x value.
+   */
+  public get x(): number {
+    return this._x
+  }
+
+  /**
+   * Get the y value.
+   */
+  public get y(): number {
+    return this._y
   }
 
   /**
@@ -23,7 +37,7 @@ export class Coord {
    * @return {boolean} True if the coordinates are equal, false otherwise.
    */
   public equals(coord: Coord): boolean {
-    return this.x === coord.x && this.y === coord.y
+    return this._x === coord._x && this._y === coord._y
   }
 
   /**
@@ -33,8 +47,8 @@ export class Coord {
    * @return {boolean} True if the coordinates are neighbors, false otherwise.
    */
   public isNeighborOf(coord: Coord): boolean {
-    const dx = Math.abs(this.x - coord.x)
-    const dy = Math.abs(this.y - coord.y)
+    const dx = Math.abs(this._x - coord._x)
+    const dy = Math.abs(this._y - coord._y)
     const isFarAway = dx > 1 || dy > 1
     const isSelf = dx == 0 && dy == 0
     return !isFarAway && !isSelf
@@ -47,8 +61,8 @@ export class Coord {
    * @return {boolean} True if the coordinates are orthogonally neighbors, false otherwise.
    */
   public isOrthogonallyNeighborOf(coord: Coord): boolean {
-    const dx = Math.abs(this.x - coord.x)
-    const dy = Math.abs(this.y - coord.y)
+    const dx = Math.abs(this._x - coord._x)
+    const dy = Math.abs(this._y - coord._y)
     const aboveOrBelow = dx == 0 && dy == 1
     const leftOrRight = dx == 1 && dy == 0
     return aboveOrBelow || leftOrRight
@@ -60,10 +74,10 @@ export class Coord {
   ): Coord[] {
     return this.filterOutOfBounds(
       [
-        new Coord(this.x - 1, this.y),
-        new Coord(this.x + 1, this.y),
-        new Coord(this.x, this.y - 1),
-        new Coord(this.x, this.y + 1),
+        new Coord(this._x - 1, this._y),
+        new Coord(this._x + 1, this._y),
+        new Coord(this._x, this._y - 1),
+        new Coord(this._x, this._y + 1),
       ],
       boardHeight,
       boardWidth,
@@ -74,14 +88,14 @@ export class Coord {
     // Generate all possible neighboring coordinates
     return this.filterOutOfBounds(
       [
-        new Coord(this.x - 1, this.y), // left
-        new Coord(this.x + 1, this.y), // right
-        new Coord(this.x, this.y - 1), // above
-        new Coord(this.x, this.y + 1), // below
-        new Coord(this.x - 1, this.y - 1), // top-left
-        new Coord(this.x + 1, this.y - 1), // top-right
-        new Coord(this.x - 1, this.y + 1), // bottom-left
-        new Coord(this.x + 1, this.y + 1), // bottom-right
+        new Coord(this._x - 1, this._y), // left
+        new Coord(this._x + 1, this._y), // right
+        new Coord(this._x, this._y - 1), // above
+        new Coord(this._x, this._y + 1), // below
+        new Coord(this._x - 1, this._y - 1), // top-left
+        new Coord(this._x + 1, this._y - 1), // top-right
+        new Coord(this._x - 1, this._y + 1), // bottom-left
+        new Coord(this._x + 1, this._y + 1), // bottom-right
       ],
       boardHeight,
       boardWidth,
