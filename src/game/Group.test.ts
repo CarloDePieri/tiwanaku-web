@@ -17,10 +17,14 @@ describe("A group", () => {
   })
 
   it("should be able to change it's field type", () => {
-    const newGroup = group.add(new Coord(1, 1)).copyWithField(Field.valley)
+    const newGroup = group
+      .add(new Coord(1, 1))
+      .copyWith({ field: Field.valley, groupId: 1 })
     expect(newGroup.field).toBe(Field.valley)
     expect(newGroup.has(new Coord(1, 1))).toBe(true)
+    expect(newGroup.groupId).toBe(1)
     expect(group.field).toBe(Field.mountain)
+    expect(group.groupId).toBeUndefined()
   })
 
   it("should get it's neighboring coordinates", () => {

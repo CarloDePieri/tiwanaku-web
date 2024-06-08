@@ -7,17 +7,23 @@ import { Field } from "./enums.ts"
  */
 export class Group extends ImmutableEquatableSet<Coord> {
   private readonly _field: Field | undefined
-  // TODO store the groupId in here
+  private readonly _id: number | undefined
 
   /**
    * Constructs a new Group.
    *
    * @param {Iterable<Coord>} initialValues - An iterable of initial coordinates for the group.
    * @param {Field} field - The field associated with the group.
+   * @param {number} groupId - The ID associated with the group.
    */
-  constructor(initialValues?: Iterable<Coord>, field?: Field) {
+  constructor(
+    initialValues?: Iterable<Coord>,
+    field?: Field,
+    groupId?: number,
+  ) {
     super(initialValues)
     this._field = field
+    this._id = groupId
   }
 
   /**
@@ -40,13 +46,27 @@ export class Group extends ImmutableEquatableSet<Coord> {
   }
 
   /**
-   * Creates a copy of the group with a specified field.
+   * Gets the ID associated with the group.
    *
-   * @param {Field} field - The field to associate with the copied group.
-   * @return {Group} A new Group that is a copy of the current group, but with the specified field.
+   * @return {number | undefined} The ID associated with the group, or undefined if no ID is associated.
    */
-  public copyWithField(field: Field): Group {
-    return new Group(this, field)
+  get groupId(): number | undefined {
+    return this._id
+  }
+
+  /**
+   * Creates a copy of the group with modified properties.
+   *
+   * @param {Object} newFields - The properties to modify.
+   * @param {Field} newFields.field - The new field. Can be set to undefined.
+   * @param {number} newFields.groupId - The new group ID. Can be set to undefined.
+   * @return {Group} A new Group that is a copy of the current group, but with the modified properties.
+   */
+  public copyWith(newFields: { field?: Field; groupId?: number }): Group {
+    // these can be changed, even to undefined
+    const groupId = "groupId" in newFields ? newFields.groupId : this._id
+    const field = "field" in newFields ? newFields.field : this._field
+    return new Group(this, field, groupId)
   }
 
   /**
