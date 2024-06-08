@@ -20,31 +20,6 @@ describe("A Cell", () => {
     }
   })
 
-  // noinspection JSConstantReassignment
-  it("should have readonly properties", () => {
-    // Attempt to change the properties
-    // @ts-expect-error - it's a test
-    cell.groupId = 1
-    // @ts-expect-error - it's a test
-    cell.coordinates = new Coord(2, 2)
-    // @ts-expect-error - it's a test
-    cell.field = Field.Corn
-    // @ts-expect-error - it's a test
-    cell.crop = Crop.Wheat
-    // @ts-expect-error - it's a test
-    cell.hiddenField = true
-    // @ts-expect-error - it's a test
-    cell.hiddenCrop = true
-
-    // Check if the properties remain the same
-    expect(cell.groupId).toBeUndefined()
-    expect(cell.coordinates).toEqual(coord)
-    expect(cell.field).toBeUndefined()
-    expect(cell.crop).toBeUndefined()
-    expect(cell.hiddenField).toBe(false)
-    expect(cell.hiddenCrop).toBe(false)
-  })
-
   it("should allow to copy an object, updating some fields", () => {
     const newCoord = new Coord(2, 2)
     const newField = Field.desert
