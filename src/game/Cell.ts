@@ -1,5 +1,17 @@
-import { Coord } from "./Coord.ts"
+import { Coord, SerializedCoord } from "./Coord.ts"
 import { Crop, Field } from "./enums.ts"
+
+/**
+ * The serialized version of a Cell object.
+ */
+export type SerializedCell = {
+  field: "mountain" | "valley" | "forest" | "desert" | undefined
+  crop: 1 | 2 | 3 | 4 | 5 | undefined
+  coordinates: SerializedCoord
+  groupId: number | undefined
+  hiddenField: boolean
+  hiddenCrop: boolean
+}
 
 /**
  * An immutable cell on the game board.
@@ -132,5 +144,40 @@ export class Cell {
         : this._hiddenCrop
 
     return new Cell(groupId, coordinates, field, crop, hiddenField, hiddenCrop)
+  }
+
+  /**
+   * Serialize the cell into a simple object.
+   *
+   * @return {SerializedCell} The serialized cell.
+   */
+  public serialize(): SerializedCell {
+    return {
+      groupId: this._groupId,
+      coordinates: this._coordinates.serialize(),
+      field: this._field
+        ? (this._field as "mountain" | "valley" | "forest" | "desert")
+        : undefined,
+      crop: this._crop ? (this._crop as 1 | 2 | 3 | 4 | 5) : undefined,
+      hiddenField: this._hiddenField,
+      hiddenCrop: this._hiddenCrop,
+    }
+  }
+
+  /**
+   * Create a new Cell instance from a serialized form.
+   *
+   * @param {SerializedCell} serializedCell - The serialized form of the cell.
+   * @return {Cell} The new Cell instance.
+   */
+  public static deserialize(serializedCell: SerializedCell): Cell {
+    return new Cell(
+      serializedCell.groupId,
+      Coord.deserialize(serializedCell.coordinates),
+      serializedCell.field ? (serializedCell.field as Field) : undefined,
+      serializedCell.crop ? (serializedCell.crop as Crop) : undefined,
+      serializedCell.hiddenField,
+      serializedCell.hiddenCrop,
+    )
   }
 }

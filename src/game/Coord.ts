@@ -1,4 +1,12 @@
 /**
+ * Serialized coordinate.
+ */
+export type SerializedCoord = {
+  x: number
+  y: number
+}
+
+/**
  * An immutable coordinate on the game board.
  */
 export class Coord {
@@ -68,6 +76,13 @@ export class Coord {
     return aboveOrBelow || leftOrRight
   }
 
+  /**
+   * Get the orthogonal neighbors of the coordinate on a game board of specified dimensions.
+   *
+   * @param {number} boardHeight - The height of the game board.
+   * @param {number} boardWidth - The width of the game board.
+   * @return {Coord[]} The orthogonal neighbors of the coordinate.
+   */
   public getOrthogonalNeighbors(
     boardHeight: number,
     boardWidth: number,
@@ -84,6 +99,13 @@ export class Coord {
     )
   }
 
+  /**
+   * Get the neighbors of the coordinate on a game board of specified dimensions.
+   *
+   * @param {number} boardHeight - The height of the game board.
+   * @param {number} boardWidth - The width of the game board.
+   * @return {Coord[]} The neighbors of the coordinate.
+   */
   public getNeighbors(boardHeight: number, boardWidth: number): Coord[] {
     // Generate all possible neighboring coordinates
     return this.filterOutOfBounds(
@@ -102,6 +124,26 @@ export class Coord {
     )
   }
 
+  /**
+   * Serialize the coordinate.
+   *
+   * @return {SerializedCoord} The serialized coordinate.
+   */
+  public serialize(): SerializedCoord {
+    return { x: this._x, y: this._y }
+  }
+
+  /**
+   * Deserialize the coordinate.
+   *
+   * @param {SerializedCoord} coord - The serialized coordinate.
+   * @return {Coord} The deserialized coordinate.
+   */
+  public static deserialize(coord: SerializedCoord): Coord {
+    return new Coord(coord.x, coord.y)
+  }
+
+  // filter out coordinates that are out of the given board
   private filterOutOfBounds(
     neighbors: Coord[],
     boardHeight: number,

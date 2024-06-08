@@ -1,14 +1,23 @@
-import { Cell } from "./Cell"
+import { Cell, SerializedCell } from "./Cell"
 import { Coord } from "./Coord"
 import { Crop, Field } from "./enums"
 
 describe("A Cell", () => {
   let cell: Cell
   let coord: Coord
+  let serializedCell: SerializedCell
 
   beforeEach(() => {
     coord = new Coord(1, 1)
     cell = new Cell(undefined, coord, undefined, undefined, false, false)
+    serializedCell = {
+      field: undefined,
+      crop: undefined,
+      groupId: undefined,
+      coordinates: { x: 1, y: 1 },
+      hiddenField: false,
+      hiddenCrop: false,
+    }
   })
 
   // noinspection JSConstantReassignment
@@ -75,5 +84,10 @@ describe("A Cell", () => {
     expect(newCell.coordinates).toEqual(newCoord)
     expect(newCell.hiddenField).toBe(newHiddenField)
     expect(newCell.hiddenCrop).toBe(newHiddenCrop)
+  })
+
+  it("should be able to serialize and deserialize", () => {
+    expect(cell.serialize()).toEqual(serializedCell)
+    expect(Cell.deserialize(serializedCell)).toEqual(cell)
   })
 })

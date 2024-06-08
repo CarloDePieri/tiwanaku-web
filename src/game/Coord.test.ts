@@ -1,10 +1,12 @@
-import { Coord } from "./Coord"
+import { Coord, SerializedCoord } from "./Coord"
 
 describe("A coordinate", () => {
   let coord: Coord
+  let serializedCoord: SerializedCoord
 
   beforeAll(() => {
     coord = new Coord(1, 1)
+    serializedCoord = { x: 1, y: 1 }
   })
 
   it("should recognize an equal coordinate", () => {
@@ -12,6 +14,11 @@ describe("A coordinate", () => {
     const coord3 = new Coord(1, 2)
     expect(coord.equals(coord2)).toBe(true)
     expect(coord.equals(coord3)).toBe(false)
+  })
+
+  it("should be able to serialize and deserialize", () => {
+    expect(coord.serialize()).toEqual(serializedCoord)
+    expect(Coord.deserialize(serializedCoord)).toEqual(coord)
   })
 
   describe("with orthogonal neighbors", () => {
