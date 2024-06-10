@@ -1,11 +1,11 @@
 import { Coord } from "./Coord.ts"
-import { ImmutableEquatableSet } from "./ImmutableEquatableSet.ts"
+import { CoordSet } from "./CoordSet.ts"
 import { Field } from "./enums.ts"
 
 /**
  * Represents a group of Coordinates on a game board with the same field type.
  */
-export class Group extends ImmutableEquatableSet<Coord> {
+export class Group extends CoordSet {
   private readonly _field: Field | undefined
   private readonly _id: number | undefined
 
@@ -32,8 +32,18 @@ export class Group extends ImmutableEquatableSet<Coord> {
    * @param {Coord} coord - The coordinate to add.
    * @return {Group} A new Group with the added coordinate.
    */
-  public add(coord: Coord): Group {
-    return new Group(super.add(coord), this._field)
+  public withCoord(coord: Coord): Group {
+    return this._copyWithCoords(super.withCoord(coord))
+  }
+
+  /**
+   * Returns a new Group with the given coordinate removed.
+   *
+   * @param {Coord} coord - The coordinate to remove.
+   * @return {Group} A new Group with the removed coordinate.
+   */
+  public withoutCoord(coord: Coord): Group {
+    return this._copyWithCoords(super.withoutCoord(coord))
   }
 
   /**
@@ -74,17 +84,20 @@ export class Group extends ImmutableEquatableSet<Coord> {
    *
    * @param {number} boardHeight - The height of the game board.
    * @param {number} boardWidth - The width of the game board.
-   * @return {ImmutableEquatableSet<Coord>} A set of coordinates representing the orthogonal neighbors of the group.
+   * @return {EquatableReadonlySet<Coord>} A set of coordinates representing the orthogonal neighbors of the group.
    */
   public getOrthogonalNeighbors(
     boardHeight: number,
     boardWidth: number,
-  ): ImmutableEquatableSet<Coord> {
+  ): CoordSet {
     return this.flatMap(
       (coord) =>
-        new ImmutableEquatableSet<Coord>(
-          coord.getOrthogonalNeighbors(boardHeight, boardWidth),
-        ),
+        new CoordSet(coord.getOrthogonalNeighbors(boardHeight, boardWidth)),
     ).difference(this)
+  }
+
+  // Private method to create a copy of the group with the given coordinates
+  private _copyWithCoords(coords: Iterable<Coord>): Group {
+    return new Group(coords, this._field, this._id)
   }
 }

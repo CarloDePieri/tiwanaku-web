@@ -1,3 +1,7 @@
+export interface Equatable<T> {
+  equals(other: T): boolean
+}
+
 /**
  * Serialized coordinate.
  */
@@ -9,7 +13,7 @@ export type SerializedCoord = {
 /**
  * An immutable coordinate on the game board.
  */
-export class Coord {
+export class Coord implements Equatable<Coord> {
   private readonly _x: number
   private readonly _y: number
 

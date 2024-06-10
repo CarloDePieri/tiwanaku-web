@@ -1,15 +1,11 @@
-import { ImmutableEquatableSet } from "./ImmutableEquatableSet.ts"
+import { CoordSet } from "./CoordSet.ts"
 import { Coord } from "./Coord"
 
-function newCoordSet(coords: Coord[]): ImmutableEquatableSet<Coord> {
-  return new ImmutableEquatableSet(coords)
-}
-
 describe("An immutable set of Coord", () => {
-  let set: ImmutableEquatableSet<Coord>
+  let set: CoordSet
 
   beforeEach(() => {
-    set = newCoordSet([new Coord(1, 1), new Coord(2, 2)])
+    set = new CoordSet([new Coord(1, 1), new Coord(2, 2)])
   })
 
   it("should have a working has", () => {
@@ -18,21 +14,26 @@ describe("An immutable set of Coord", () => {
     expect(set.has(new Coord(1, 2))).toBe(false)
   })
 
+  it("should have a constructor that use equals", () => {
+    const newSet = new CoordSet([new Coord(1, 1), new Coord(1, 1)])
+    expect(newSet.size).toBe(1)
+  })
+
   it("should be able to add elements", () => {
-    const newSet = set.add(new Coord(1, 2))
+    const newSet = set.withCoord(new Coord(1, 2))
     expect(newSet.has(new Coord(1, 2))).toBe(true)
     expect(set.has(new Coord(1, 2))).toBe(false)
   })
 
   it("should not add a new element twice", () => {
     // NOTE it's important that these Coord are not the same instance
-    const newSet = set.add(new Coord(1, 2)).add(new Coord(1, 2))
+    const newSet = set.withCoord(new Coord(1, 2)).withCoord(new Coord(1, 2))
     expect(newSet.has(new Coord(1, 2))).toBe(true)
     expect(newSet.size).toBe(3)
   })
 
   it("should be able to delete an element", () => {
-    const newSet = set.delete(new Coord(1, 1))
+    const newSet = set.withoutCoord(new Coord(1, 1))
     expect(newSet.size).toBe(1)
     expect(set.size).toBe(2)
   })
@@ -49,16 +50,9 @@ describe("An immutable set of Coord", () => {
     expect(array[0]).toBeInstanceOf(Coord)
   })
 
-  it("should have a working map operation", () => {
-    const newSet = set.map((coord) => new Coord(coord.x, coord.y + 1))
-    expect(newSet.has(new Coord(1, 2))).toBe(true)
-    expect(newSet.has(new Coord(2, 3))).toBe(true)
-    expect(newSet.size).toBe(set.size)
-  })
-
   it("should have a working flatmap operation", () => {
-    const newSet = set.flatMap((coord) =>
-      newCoordSet([coord, new Coord(coord.x * 3, coord.y * 3)]),
+    const newSet = set.flatMap(
+      (coord) => new CoordSet([coord, new Coord(coord.x * 3, coord.y * 3)]),
     )
     expect(newSet.has(new Coord(1, 1))).toBe(true)
     expect(newSet.has(new Coord(3, 3))).toBe(true)
@@ -75,9 +69,17 @@ describe("An immutable set of Coord", () => {
   })
 
   it("should have the difference operation", () => {
-    const newSet = set.difference(newCoordSet([new Coord(1, 1)]))
+    const newSet = set.difference(new CoordSet([new Coord(1, 1)]))
     expect(newSet.has(new Coord(1, 1))).toBe(false)
     expect(newSet.has(new Coord(2, 2))).toBe(true)
     expect(newSet.size).toBe(1)
+  })
+
+  it("should have a factory method that copies the initial iterator", () => {
+    const initial = [new Coord(1, 1), new Coord(2, 2)]
+    const newSet = new CoordSet(initial)
+    initial[0] = new Coord(3, 3)
+    expect(newSet.has(new Coord(1, 1))).toBe(true)
+    expect(newSet.has(new Coord(3, 3))).toBe(false)
   })
 })
