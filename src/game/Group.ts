@@ -84,7 +84,7 @@ export class Group extends CoordSet {
    *
    * @param {number} boardHeight - The height of the game board.
    * @param {number} boardWidth - The width of the game board.
-   * @return {EquatableReadonlySet<Coord>} A set of coordinates representing the orthogonal neighbors of the group.
+   * @return {CoordSet} A set of coordinates representing the orthogonal neighbors of the group.
    */
   public getOrthogonalNeighbors(
     boardHeight: number,
