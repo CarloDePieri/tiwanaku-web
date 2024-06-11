@@ -147,6 +147,15 @@ export class Cell {
   }
 
   /**
+   * Create a copy of the cell.
+   *
+   * @return {Cell} A new cell that is a copy of the current cell.
+   */
+  public copy(): Cell {
+    return this.copyWith({})
+  }
+
+  /**
    * Serialize the cell into a simple object.
    *
    * @return {SerializedCell} The serialized cell.
