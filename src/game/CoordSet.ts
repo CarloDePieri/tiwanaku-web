@@ -1,4 +1,5 @@
 import { Coord } from "./Coord.ts"
+import { shuffledCopy } from "./utils.ts"
 
 /**
  * An immutable set of equatable coordinates.
@@ -129,6 +130,15 @@ export class CoordSet implements ReadonlySet<Coord> {
    */
   public copy(): CoordSet {
     return new CoordSet(this._set)
+  }
+
+  /**
+   * Get a shuffled copy of the set.
+   *
+   * @return {CoordSet} A new set that is a shuffled copy of the current set.
+   */
+  public copyShuffled(): CoordSet {
+    return new CoordSet(shuffledCopy(this.toArray()))
   }
 
   // Find a specific value in the set, using the .equals() for equality
