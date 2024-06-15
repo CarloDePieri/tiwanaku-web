@@ -5,6 +5,12 @@ import { State } from "./State.ts"
 const expose = (gameController: GameController) => {
   return {
     seedOnes: (): State => gameController["seedOnes"](),
+    depthFirstGrowth: (state: State): State | null =>
+      gameController["depthFirstGrowth"](state),
+    growGroups: (
+      state: State,
+      strategy: (state: State) => State | null,
+    ): State | null => gameController["growGroups"](state, strategy),
   }
 }
 
@@ -13,10 +19,17 @@ describe("A GameController", () => {
   const boardHeight = 5
   const minGroup = 6
   const maxGroup = 8
-  const config = new GameConfig(boardWidth, boardHeight, 25, minGroup, maxGroup)
+  const config = new GameConfig(
+    boardWidth,
+    boardHeight,
+    25,
+    5,
+    minGroup,
+    maxGroup,
+  )
   const gameController = new GameController(config)
 
-  describe("when seeding ones", () => {
+  describe.each(Array(11).fill(null))("when seeding ones (%# of 10)", () => {
     let state: State
 
     beforeAll(() => {
@@ -30,6 +43,12 @@ describe("A GameController", () => {
       expect(state.groups.size).toBeLessThanOrEqual(maxGroup)
     })
 
+    it("should assign a field to each group", () => {
+      for (const group of state.groups.values()) {
+        expect(group.field).toBeDefined()
+      }
+    })
+
     it("should generate a correct board", () => {
       for (const coord of state.board
         .flat()
@@ -41,5 +60,42 @@ describe("A GameController", () => {
         expect(state.getCell(coord.x, coord.y).crop).toBeUndefined()
       }
     })
+  })
+
+  // repeat this 11 times to ensure that the growth does not cause any issues
+  describe.each(Array(11).fill(null))("when growing groups (%# of 10)", () => {
+    let state: State
+
+    beforeAll(() => {
+      const exposed = expose(gameController)
+      let candidate: State | null = null
+      while (candidate === null) {
+        // redo the seeding every time to ensure a clean state
+        state = exposed.seedOnes()
+        candidate = exposed.growGroups(state, exposed.depthFirstGrowth)
+      }
+      state = candidate
+    })
+
+    it("should not cause different groups with same field touch", () => {
+      for (const cell of state.board.flat()) {
+        const neighbors = cell.coordinates
+          .getNeighbors(boardHeight, boardWidth)
+          .map((coord) => state.getCell(coord.x, coord.y))
+
+        for (const neighbor of neighbors) {
+          // if they have different groupId they must have different fields
+          if (neighbor.groupId !== cell.groupId) {
+            expect(neighbor.field).not.toBe(cell.field)
+          }
+        }
+      }
+    })
+
+    it("should assign all cells to a group", () => {
+      for (const cell of state.board.flat()) {
+        expect(cell.groupId).toBeDefined()
+      }
+    }, 5000)
   })
 })

@@ -14,3 +14,16 @@ export function shuffledCopy<T>(array: T[]): T[] {
   }
   return newArray
 }
+
+// noinspection JSValidateJSDoc
+/**
+ * Pick a random element from an array. If the array is empty, returns null.
+ *
+ * @param {Array<T>} array - The array to pick from.
+ * @return {T | null} A random element from the given array, or null if the array is empty.
+ */
+export function pickRandom<T>(array: Array<T>): T | null {
+  return array.length === 0
+    ? null
+    : array[Math.floor(Math.random() * array.length)]
+}
