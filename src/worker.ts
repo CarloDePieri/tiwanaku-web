@@ -1,5 +1,5 @@
 import { expose } from "comlink"
-import { generateBoard } from "./game/procedures.ts"
+import { generateBoard } from "./game/GameController.ts"
 
 const payload = {
   generateBoard,

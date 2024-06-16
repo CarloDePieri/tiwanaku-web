@@ -25,7 +25,7 @@ export default function GameBoard({
 
   const screenSizeRatio = dim.width / dim.height
 
-  const isSmall = board.width === 5
+  const isSmall = board.boardWidth === 5
 
   let unit
   let widthStr
@@ -36,15 +36,15 @@ export default function GameBoard({
   if (isSmall) {
     unit = screenSizeRatio > 1 ? "vh" : "vw"
 
-    cellH = Math.floor(targetVW / board.width) - 1
-    cellW = Math.floor(targetVH / board.height) - 1
+    cellH = Math.floor(targetVW / board.boardWidth) - 1
+    cellW = Math.floor(targetVH / board.boardHeight) - 1
 
     widthStr = `${targetVW}${unit}`
     heightStr = `${targetVH}${unit}`
   } else {
     let width
     let height
-    const boardSizeRatio = board.width / board.height
+    const boardSizeRatio = board.boardWidth / board.boardHeight
 
     if (screenSizeRatio > boardSizeRatio) {
       unit = "vh"
@@ -52,8 +52,8 @@ export default function GameBoard({
       height = targetVH
       width = Math.floor(height * boardSizeRatio)
 
-      cellH = Math.floor(width / board.width) - 0.8
-      cellW = Math.floor(width / board.width) - 0.8
+      cellH = Math.floor(width / board.boardWidth) - 0.8
+      cellW = Math.floor(width / board.boardWidth) - 0.8
     } else {
       // landscape, with a ratio smaller than the board OR portrait
       unit = "vw"
@@ -61,8 +61,8 @@ export default function GameBoard({
       width = targetVW
       height = Math.floor(width / boardSizeRatio)
 
-      cellH = Math.floor(height / board.height) - 0.2
-      cellW = Math.floor(height / board.height) - 0.2
+      cellH = Math.floor(height / board.boardHeight) - 0.2
+      cellW = Math.floor(height / board.boardHeight) - 0.2
     }
 
     widthStr = `${width}${unit}`
@@ -78,7 +78,7 @@ export default function GameBoard({
         maxHeight: `${maxVH}vh`,
       }}
     >
-      {board.getBoard().map((row, y) => {
+      {board.board.map((row, y) => {
         return (
           // TODO fix the key
           <div style={{ display: "flex" }} key={`row_${y}`}>

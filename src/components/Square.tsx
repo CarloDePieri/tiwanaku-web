@@ -7,7 +7,7 @@ import desertUrl from "../assets/desert.png"
 import forestUrl from "../assets/forest.png"
 import mountainUrl from "../assets/mountain.png"
 import valleyUrl from "../assets/valley.png"
-import { Field, Crop } from "../game/structures.ts"
+import { Field, Crop } from "../game/enums.ts"
 
 interface SquareProps {
   field: Field | undefined

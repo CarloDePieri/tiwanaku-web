@@ -1,7 +1,7 @@
 import { Coord } from "./Coord.ts"
 import { CoordSet } from "./CoordSet.ts"
 import { Crop, Field } from "./enums.ts"
-import { SerializedBoard, State } from "./State.ts"
+import { BoardSize, SerializedBoard, State } from "./State.ts"
 import { StateStack } from "./StateStack.ts"
 import { pickRandom, shuffledCopy } from "./utils.ts"
 
@@ -27,7 +27,7 @@ export class GameController {
   private stateStack: StateStack
 
   constructor(private readonly config: GameConfig) {
-    this.stateStack = new StateStack(config.stepMaxTries)
+    this.stateStack = new StateStack(this.config.stepMaxTries)
   }
 
   /**
@@ -281,8 +281,20 @@ export class GameController {
     return state.groups.get(groupId)!.size < 5 && border.size > 0
   }
 
-  private tryUntil<T extends () => State | null>(
-    func: T,
+  /**
+   * Try to execute a function until it returns a valid result.
+   * The function will be executed until it returns a non-null result or until
+   * the maximum number of tries is reached.
+   * If a validator function is provided, the result will be checked against it.
+   *
+   * @param {() => State | null} func - The function to execute.
+   * @param {number} maxTries - The maximum number of tries before returning null.
+   * @param {(result: State) => boolean} validator - The function to validate the result.
+   * @return {State | null} The result of the function, or null if the maximum number of tries was reached.
+   * @private
+   */
+  private tryUntil(
+    func: () => State | null,
     maxTries: number,
     validator?: (result: State) => boolean,
   ): State | null {
@@ -305,6 +317,7 @@ export class GameController {
     state: State,
     groupsToPlant: number[],
   ): State | null {
+    // TODO remove this tryUntil, it's redundant with the one in stack
     return this.tryUntil(() => {
       // for every group that needs to be planted
       for (const groupId of groupsToPlant) {
@@ -345,17 +358,56 @@ export class GameController {
     }, this.config.stepMaxTries)
   }
 
-  public generateBoard(): SerializedBoard {
-    const firstStep = this.generateFirstStep()
-    this.stateStack.pushValid(firstStep)
-    // TODO temporary, implement the actual logic
-    const newState = this.plantCrop(
-      this.stateStack.nextCrop,
-      this.stateStack.lastState,
-      [...this.stateStack.lastState.groups.keys()],
-    )
-    if (newState !== null) this.stateStack.pushValid(newState)
+  public generateBoard(): State {
+    for (;;) {
+      // make sure to grab a fresh reference to the stack
+      const stack = this.stateStack
 
-    throw new Error("Not implemented")
+      // push the first step
+      stack.pushValid(this.generateFirstStep())
+
+      // prepare the groupsToPlant
+      const groupsToPlant = Array.from(stack.lastState.groups.entries())
+        // sort them from smallest to the largest (since the smallest is the hardest to grow)
+        .sort((a, b) => a[1].size - b[1].size)
+        // map to the groupID and the group length
+        .map(([groupId, group]) => [groupId, group.size])
+
+      // while the state stack is not empty
+      while (!stack.empty) {
+        if (stack.full) {
+          return stack.lastState
+        }
+
+        // try to plant the next crop
+        const candidateState = this.plantCrop(
+          stack.nextCrop,
+          stack.lastState,
+          groupsToPlant
+            // only pass the groups that are big enough to plant the crop
+            .filter(([, groupSize]) => groupSize >= stack.nextCrop)
+            .map(([groupId]) => groupId),
+        )
+        // if the candidate state is valid, push it to the stack
+        if (candidateState !== null) stack.pushValid(candidateState)
+        // otherwise, mark the step as invalid
+        else stack.markInvalid()
+      }
+      // if we got here we failed to generate a board, try again after resetting the stack
+      this.stateStack = new StateStack(this.config.stepMaxTries)
+    }
   }
+}
+
+export const generateBoard = (boardSize: BoardSize): SerializedBoard => {
+  // Define the board parameters
+  const config = new GameConfig(
+    boardSize === "small" ? 5 : 9,
+    5,
+    5,
+    5,
+    boardSize === "small" ? 6 : 10,
+    boardSize === "small" ? 8 : 14,
+  )
+  return new GameController(config).generateBoard().getSerializedBoard()
 }

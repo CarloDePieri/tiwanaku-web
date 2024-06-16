@@ -31,7 +31,7 @@ describe("A GameController", () => {
   const config = new GameConfig(
     boardWidth,
     boardHeight,
-    25,
+    10,
     5,
     minGroup,
     maxGroup,
@@ -152,6 +152,70 @@ describe("A GameController", () => {
           thereIsAtLeastOneTwo = true
         }
         expect(thereIsAtLeastOneTwo).toBe(true)
+      })
+    },
+  )
+
+  describe.each(["small", "standard"])(
+    "when generating a %s board",
+    (boardSize: string) => {
+      let state: State
+      let boardWidth: number
+      let boardHeight: number
+      let minGroup: number
+      let maxGroup: number
+
+      // TODO why is the standard board so slow?
+      // describe.each(tenTimes)("(%d run out of 10)", () => {
+      describe("(1 run out of 1)", () => {
+        beforeAll(() => {
+          if (boardSize === "small") {
+            boardWidth = 5
+            boardHeight = 5
+            minGroup = 6
+            maxGroup = 8
+            state = gameController.generateBoard()
+          } else {
+            boardWidth = 9
+            boardHeight = 5
+            minGroup = 10
+            maxGroup = 14
+            const configStandard = new GameConfig(
+              boardWidth,
+              boardHeight,
+              5,
+              5,
+              minGroup,
+              maxGroup,
+            )
+            gameController = new GameController(configStandard)
+            state = gameController.generateBoard()
+          }
+        })
+
+        it("should be a valid board", () => {
+          expect(state.boardHeight).toBe(boardHeight)
+          expect(state.boardWidth).toBe(boardWidth)
+          expect(state.groups.size).toBeGreaterThanOrEqual(minGroup)
+          expect(state.groups.size).toBeLessThanOrEqual(maxGroup)
+
+          for (const cell of state.board.flat()) {
+            expect(cell.groupId).toBeDefined()
+            expect(cell.field).toBeDefined()
+            expect(cell.crop).toBeDefined()
+            const neighbors = cell.coordinates
+              .getNeighbors(boardHeight, boardWidth)
+              .map((coord) => state.getCell(coord.x, coord.y))
+            for (const neighbor of neighbors) {
+              // if they have different groupId they must have different fields
+              if (neighbor.groupId !== cell.groupId) {
+                expect(neighbor.field).not.toBe(cell.field)
+              }
+              // they must have a different crop
+              expect(neighbor.crop).not.toBe(cell.crop)
+            }
+          }
+        })
       })
     },
   )
