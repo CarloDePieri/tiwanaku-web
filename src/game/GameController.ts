@@ -17,6 +17,11 @@ export class GameConfig {
   ) {}
 }
 
+interface GroupGrowthResult {
+  state: State
+  border: CoordSet
+}
+
 export class GameController {
   // TODO explain how states are stored
   private stateStack: StateStack
@@ -24,12 +29,84 @@ export class GameController {
   constructor(private readonly config: GameConfig) {
     this.stateStack = new StateStack(config.stepMaxTries)
   }
+  private canGroupGrow(
+    state: State,
+    groupId: number,
+    border: CoordSet,
+  ): boolean {
+    return state.groups.get(groupId)!.size < 5 && border.size > 0
+  }
+
+  private growGroupOnce(
+    state: State,
+    groupId: number,
+    groupBorder: CoordSet,
+  ): GroupGrowthResult {
+    const group = state.groups.get(groupId)!
+
+    do {
+      // make sure the border can grow
+      if (groupBorder.size === 0) break
+
+      // pick a random cell from the border
+      const candidateCellCoord: Coord | null = pickRandom(groupBorder.toArray())
+      if (candidateCellCoord === null) break
+
+      // if the new cell was not assigned to a group
+      if (
+        state.getCell(candidateCellCoord.x, candidateCellCoord.y).groupId ===
+        undefined
+      ) {
+        // produce a list of the new neighboring fields
+        const candidateNeighboringField = candidateCellCoord
+          .getNeighbors(this.config.boardHeight, this.config.boardWidth)
+          // subtract the group itself
+          .filter((coord) => !group.has(coord))
+          // extract the fields
+          .map((coord) => state.getCell(coord.x, coord.y).field)
+
+        // if the new border does not contain the same field of this group
+        if (!candidateNeighboringField.some((field) => field === group.field)) {
+          // we managed to grow the group
+          return {
+            // create a copy of the given state with the updated cell
+            state: state.copyWithCell(
+              state
+                .getCell(candidateCellCoord.x, candidateCellCoord.y)
+                .copyWith({ groupId: groupId, field: group.field }),
+            ),
+            // update the border to include the new cell neighbors
+            border: groupBorder.union(
+              CoordSet.from(
+                candidateCellCoord.getOrthogonalNeighbors(
+                  this.config.boardHeight,
+                  this.config.boardWidth,
+                ),
+              ).difference(group),
+            ),
+          }
+        } else {
+          // remove the cell from the border
+          groupBorder = groupBorder.withoutCoord(candidateCellCoord)
+        }
+      } else {
+        // remove the cell from the border
+        groupBorder = groupBorder.withoutCoord(candidateCellCoord)
+      }
+    } while (groupBorder.size > 0)
+
+    // if we got here we couldn't grow the group, return the originale state and the updated border
+    return {
+      state,
+      border: groupBorder,
+    }
+  }
 
   /**
    * Grow the groups of the state using a depth-first strategy.
    * This strategy will try to grow each group orthogonally until the group is
    * full, or it can't grow anymore.
-   * The returned state is not guaranteed to have valid groups.
+   * The returned state is not guaranteed to have valid groups (there may be holes in the board).
    *
    * @param {State} state - The state to grow the groups of.
    * @return {State | null} The state with the grown groups, or null if the groups could not be grown.
@@ -38,65 +115,18 @@ export class GameController {
   private depthFirstGrowth(state: State): State | null {
     let newState = state
     newState.groups.forEach((_, groupId) => {
-      // since the object pointed by newState will change later on,
-      // we need a way to get an up-to-date reference to the group
-      // since we are in a forEach loop, the group is guaranteed to exist
-      const getGroup = () => newState.groups.get(groupId)!
-      // this is the set of cells orthogonally adjacent to the border's cells
-      let groupBorder: CoordSet
-      // these are cells that the group already tried to grow towards
-      let groupBlacklist = new CoordSet()
+      // compute the first border of the group
+      let groupBorder = newState.groups
+        .get(groupId)!
+        .getOrthogonalNeighbors(this.config.boardHeight, this.config.boardWidth)
 
-      do {
-        const group = getGroup()
-
-        // build the orthogonal border (minus the blacklist)
-        groupBorder = group
-          .getOrthogonalNeighbors(
-            this.config.boardHeight,
-            this.config.boardWidth,
-          )
-          .difference(groupBlacklist)
-
-        // pick a random cell from the border
-        const candidateCellCoord: Coord | null = pickRandom(
-          groupBorder.toArray(),
-        )
-        if (candidateCellCoord === null) break
-
-        // if the new cell was not assigned to a group
-        if (
-          newState.getCell(candidateCellCoord.x, candidateCellCoord.y)
-            .groupId === undefined
-        ) {
-          // produce a list of the new neighboring fields
-          const candidateNeighboringField = candidateCellCoord
-            .getNeighbors(this.config.boardHeight, this.config.boardWidth)
-            // subtract the group itself
-            .filter((coord) => !group.has(coord))
-            // extract the fields
-            .map((coord) => newState.getCell(coord.x, coord.y).field)
-
-          // if the new border does not contain the same field of this group
-          if (
-            !candidateNeighboringField.some((field) => field === group.field)
-          ) {
-            // add the cell to the group
-            newState = newState.copyWithCell(
-              newState
-                .getCell(candidateCellCoord.x, candidateCellCoord.y)
-                .copyWith({ groupId: groupId, field: group.field }),
-            )
-          } else {
-            // add the cell to the blacklist
-            groupBlacklist = groupBlacklist.withCoord(candidateCellCoord)
-          }
-        } else {
-          // add the cell to the blacklist
-          groupBlacklist = groupBlacklist.withCoord(candidateCellCoord)
-        }
-        // and now keep going until either the group is full or it's border is empty
-      } while (getGroup().size < 5 && groupBorder.size > 0)
+      while (this.canGroupGrow(newState, groupId, groupBorder)) {
+        // try to grow the group once
+        const result = this.growGroupOnce(newState, groupId, groupBorder)
+        // keep updating the state and the border until we can't grow anymore
+        newState = result.state
+        groupBorder = result.border
+      }
     })
     return newState
   }
