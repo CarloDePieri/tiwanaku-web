@@ -35,19 +35,39 @@ export class GameController {
    * It will return a state with the first crop seeded and all cells assigned
    * to a group and a field.
    *
+   * @param {((state: State) => State)[]} availableStrategies - The strategies to use to grow the groups.
    * @return {State} The first step of the board.
    * @private
    */
-  private generateFirstStep(): State {
+  private generateFirstStep(
+    availableStrategies: ((state: State) => State)[] = [
+      this.depthFirstGrowth,
+      this.breadthFirstGrowth,
+    ],
+  ): State {
     let state: State | null = null
+    if (availableStrategies.length === 0)
+      throw new Error("No growth strategy was provided!")
     while (state === null) {
       // pick a random strategy
-      const strategy = pickRandom([
-        this.depthFirstGrowth.bind(this),
-        this.breadthFirstGrowth.bind(this),
-      ])!
-      // try to grow the groups from a seeded state until a valid state is found
-      state = this.growGroups(this.seedOnes(), strategy)
+      const strategy = pickRandom(availableStrategies)!.bind(this)
+      // prepare a seeded state
+      const seededState = this.seedOnes()
+      // Since some combinations of seeded states and strategies may find difficult to grow the groups,
+      // tryUntil will return null after a certain number of tries.
+      state = this.tryUntil(
+        // Try to grow the groups using the given strategy.
+        () => strategy(seededState),
+        // maximum number of tries before returning null
+        this.config.growGroupsMaxTries,
+        // use this function to check if the state is valid
+        (result) => {
+          for (const cell of result.board.flat()) {
+            if (cell.groupId === undefined) return false
+          }
+          return true
+        },
+      )
     }
     return state
   }
@@ -96,28 +116,6 @@ export class GameController {
       )
         return state
     }
-  }
-
-  /**
-   * Try to grow the groups of the state using the given strategy.
-   * Since some combinations of states and strategies may find difficult to grow the groups,
-   * this method will fail after a certain number of tries.
-   *
-   * @param {State} state - The state to grow the groups of.
-   * @param {(state: State) => State} growthStrategy - The strategy to use to grow the groups.
-   * @return {State | null} The state with the grown groups, or null if the strategy failed.
-   * @private
-   */
-  private growGroups(
-    state: State,
-    growthStrategy: (state: State) => State,
-  ): State | null {
-    // TODO integrate this with generateFirstStep?
-    return this.tryUntil(
-      () => growthStrategy(state),
-      this.config.growGroupsMaxTries,
-      (result) => this.hasValidGroups(result),
-    )
   }
 
   /**
@@ -281,14 +279,6 @@ export class GameController {
     border: CoordSet,
   ): boolean {
     return state.groups.get(groupId)!.size < 5 && border.size > 0
-  }
-
-  // check if all cells of the board have been assigned to a group
-  private hasValidGroups(state: State): boolean {
-    for (const cell of state.board.flat()) {
-      if (cell.groupId === undefined) return false
-    }
-    return true
   }
 
   private tryUntil<T extends () => State | null>(

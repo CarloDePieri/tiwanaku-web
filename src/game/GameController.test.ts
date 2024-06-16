@@ -11,11 +11,8 @@ const expose = (gameController: GameController) => {
       gameController["depthFirstGrowth"](state),
     breadthFirstGrowth: (state: State): State =>
       gameController["breadthFirstGrowth"](state),
-    growGroups: (
-      state: State,
-      strategy: (state: State) => State,
-    ): State | null => gameController["growGroups"](state, strategy),
-    generateFirstStep: (): State => gameController["generateFirstStep"](),
+    generateFirstStep: (strategies?: ((state: State) => State)[]): State =>
+      gameController["generateFirstStep"](strategies),
     plantCrop: (
       crop: Crop,
       state: State,
@@ -83,22 +80,17 @@ describe("A GameController", () => {
   describe.each(["DFS", "BFS"])(
     "when growing groups with %s",
     (strategyName) => {
-      // repeat this 11 times to ensure that the growth does not cause any issues
       describe.each(tenTimes)("(%d run out of 10)", () => {
         let state: State
 
         beforeAll(() => {
+          // select the strategy
           const strategy =
             strategyName === "DFS"
               ? exposed.depthFirstGrowth
               : exposed.breadthFirstGrowth
-          let candidate: State | null = null
-          while (candidate === null) {
-            // redo the seeding every time to ensure a clean state
-            state = exposed.seedOnes()
-            candidate = exposed.growGroups(state, strategy)
-          }
-          state = candidate
+          // generate the first step
+          state = exposed.generateFirstStep([strategy.bind(gameController)])
         })
 
         it("should not cause different groups with same field touch", () => {
