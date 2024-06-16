@@ -5,7 +5,7 @@ describe("An immutable set of Coord", () => {
   let set: CoordSet
 
   beforeEach(() => {
-    set = new CoordSet([new Coord(1, 1), new Coord(2, 2)])
+    set = CoordSet.from([new Coord(1, 1), new Coord(2, 2)])
   })
 
   it("should have a working has", () => {
@@ -15,7 +15,7 @@ describe("An immutable set of Coord", () => {
   })
 
   it("should have a constructor that use equals", () => {
-    const newSet = new CoordSet([new Coord(1, 1), new Coord(1, 1)])
+    const newSet = CoordSet.from([new Coord(1, 1), new Coord(1, 1)])
     expect(newSet.size).toBe(1)
   })
 
@@ -51,14 +51,13 @@ describe("An immutable set of Coord", () => {
   })
 
   it("should have a working flatmap operation", () => {
-    const newSet = set.flatMap(
-      (coord) => new CoordSet([coord, new Coord(coord.x * 3, coord.y * 3)]),
+    const newSet = set.flatMap((coord) =>
+      CoordSet.from([coord, new Coord(coord.x * 2, coord.y * 2)]),
     )
     expect(newSet.has(new Coord(1, 1))).toBe(true)
-    expect(newSet.has(new Coord(3, 3))).toBe(true)
     expect(newSet.has(new Coord(2, 2))).toBe(true)
-    expect(newSet.has(new Coord(6, 6))).toBe(true)
-    expect(newSet.size).toBe(4)
+    expect(newSet.has(new Coord(4, 4))).toBe(true)
+    expect(newSet.size).toBe(3)
   })
 
   it("should have the filter operation", () => {
@@ -69,15 +68,23 @@ describe("An immutable set of Coord", () => {
   })
 
   it("should have the difference operation", () => {
-    const newSet = set.difference(new CoordSet([new Coord(1, 1)]))
+    const newSet = set.difference(CoordSet.from([new Coord(1, 1)]))
     expect(newSet.has(new Coord(1, 1))).toBe(false)
     expect(newSet.has(new Coord(2, 2))).toBe(true)
     expect(newSet.size).toBe(1)
   })
 
+  it("should have an union operation", () => {
+    const newSet = set.union(CoordSet.from([new Coord(1, 1), new Coord(3, 3)]))
+    expect(newSet.has(new Coord(1, 1))).toBe(true)
+    expect(newSet.has(new Coord(2, 2))).toBe(true)
+    expect(newSet.has(new Coord(3, 3))).toBe(true)
+    expect(newSet.size).toBe(3)
+  })
+
   it("should have a factory method that copies the initial iterator", () => {
     const initial = [new Coord(1, 1), new Coord(2, 2)]
-    const newSet = new CoordSet(initial)
+    const newSet = CoordSet.from(initial)
     initial[0] = new Coord(3, 3)
     expect(newSet.has(new Coord(1, 1))).toBe(true)
     expect(newSet.has(new Coord(3, 3))).toBe(false)

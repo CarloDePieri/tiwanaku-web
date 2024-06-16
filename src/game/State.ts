@@ -133,7 +133,7 @@ export class State {
    * @return {CoordSet} A set of all the coordinates of the cells in the board.
    */
   public getBoardCoordinates(): CoordSet {
-    return new CoordSet(this.board.flat().map((cell) => cell.coordinates))
+    return CoordSet.from(this.board.flat().map((cell) => cell.coordinates))
   }
 
   /**
@@ -201,7 +201,7 @@ export class State {
     // either create a new group or update the existing one
     const group =
       oldGroup === undefined
-        ? new Group([coord], cell.field, groupId)
+        ? Group.from([coord], cell.field, groupId)
         : oldGroup.withCoord(coord)
 
     // update the groups map

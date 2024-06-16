@@ -152,7 +152,7 @@ export class GameController {
         )
         // subtract the coord and its neighbors from the valid coords
         validCoords = validCoords.difference(
-          new CoordSet(
+          CoordSet.from(
             coord
               .getNeighbors(this.config.boardHeight, this.config.boardWidth)
               .concat([coord]),

@@ -1,22 +1,27 @@
 import { Coord } from "./Coord.ts"
-import { shuffledCopy } from "./utils.ts"
+import { filterDuplicates, shuffledCopy } from "./utils.ts"
 
 /**
  * An immutable set of equatable coordinates.
  */
 export class CoordSet implements ReadonlySet<Coord> {
   private readonly _set: Set<Coord>
+  private cached_size: number | undefined
 
-  constructor(initialValues?: Iterable<Coord>) {
-    const filteredValues: Coord[] = []
-    if (initialValues) {
-      for (const value of initialValues) {
-        if (!filteredValues.some((v) => v.equals(value))) {
-          filteredValues.push(value)
-        }
-      }
-    }
-    this._set = new Set(filteredValues)
+  // beware when using this constructor, it does not check for duplicates
+  protected constructor(initialValues?: Iterable<Coord>) {
+    this._set = new Set(initialValues)
+  }
+
+  /**
+   * Create a CoordSet from an iterable of coordinates.
+   * Since this is a Set, if the iterable contains duplicates, only the first
+   * occurrence will be kept.
+   *
+   * @param {Iterable<Coord>} initialValues - The initial values for the set.
+   */
+  static from(initialValues: Iterable<Coord>): CoordSet {
+    return new CoordSet(filterDuplicates(initialValues))
   }
 
   /**
@@ -25,7 +30,13 @@ export class CoordSet implements ReadonlySet<Coord> {
    * @return {number} The size of the set.
    */
   public get size(): number {
-    return this._set.size
+    // Cache the size after the first access, since this is immutable
+    if (this.cached_size === undefined) {
+      this.cached_size = this._set.size
+      return this.cached_size
+    } else {
+      return this.cached_size
+    }
   }
 
   /**
@@ -73,7 +84,7 @@ export class CoordSet implements ReadonlySet<Coord> {
    * @param callbackfn - A function that will be called on each element.
    * @param {Coord} callbackfn.coord1 - The coordinate.
    * @param {Coord} callbackfn.coord2 - The coordinate.
-   * @param {EquatableReadonlySet<Coord>} callbackfn.set - The set that forEach was called upon.
+   * @param {CoordSet} callbackfn.set - The set that forEach was called upon.
    * @param thisArg - An object to which the 'this' keyword can refer in the callbackfn function.
    */
   forEach(
@@ -109,7 +120,7 @@ export class CoordSet implements ReadonlySet<Coord> {
     const newValues = this.toArray()
       .map(fn)
       .reduce((acc, set) => acc.concat(set.toArray()), new Array<Coord>())
-    return new CoordSet(newValues)
+    return CoordSet.from(newValues)
   }
 
   /**
@@ -121,6 +132,19 @@ export class CoordSet implements ReadonlySet<Coord> {
    */
   public difference(other: CoordSet): CoordSet {
     return this.filter((coord) => !other.has(coord))
+  }
+
+  /**
+   * Creates a new set with all coordinates that are in this set or the other set.
+   *
+   * @param {CoordSet} other - The set to unite with.
+   * @return {CoordSet} A new set with the coordinates that are in this set or the other set.
+   */
+  public union(other: CoordSet): CoordSet {
+    return new CoordSet([
+      ...this._set,
+      ...other.filter((coord) => !this.has(coord))._set,
+    ])
   }
 
   /**

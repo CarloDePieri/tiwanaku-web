@@ -6,7 +6,7 @@ describe("A group", () => {
   let group: Group
 
   beforeEach(() => {
-    group = new Group([], Field.mountain)
+    group = Group.from([], Field.mountain)
   })
 
   it("should not lose fields when using methods from the super", () => {
@@ -47,5 +47,13 @@ describe("A group", () => {
     expect(neighbors).toContainEqual(new Coord(1, 1))
     expect(neighbors).toContainEqual(new Coord(0, 2))
     expect(neighbors.size).toBe(3)
+  })
+
+  it("should maintain properties of CoordSet", () => {
+    const newGroup = Group.from(
+      [new Coord(1, 1), new Coord(1, 1)],
+      Field.mountain,
+    )
+    expect(newGroup.size).toBe(1)
   })
 })

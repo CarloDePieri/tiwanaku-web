@@ -1,3 +1,5 @@
+import { Equatable } from "./Coord.ts"
+
 // noinspection JSValidateJSDoc
 /**
  * Return a shallow copy of the given array shuffled with the Fisher-Yates
@@ -26,4 +28,25 @@ export function pickRandom<T>(array: Array<T>): T | null {
   return array.length === 0
     ? null
     : array[Math.floor(Math.random() * array.length)]
+}
+
+// noinspection JSValidateJSDoc
+/**
+ * Filter duplicates from an iterable of equatable values.
+ *
+ * @param {Iterable<T>} values - The values to filter.
+ * @return {T[]} An array with duplicates removed.
+ */
+export function filterDuplicates<T extends Equatable<T>>(
+  values: Iterable<T>,
+): T[] {
+  const filteredValues: T[] = []
+  if (values) {
+    for (const value of values) {
+      if (!filteredValues.some((v) => v.equals(value))) {
+        filteredValues.push(value)
+      }
+    }
+  }
+  return filteredValues
 }

@@ -1,6 +1,7 @@
 import { Coord } from "./Coord.ts"
 import { CoordSet } from "./CoordSet.ts"
 import { Field } from "./enums.ts"
+import { filterDuplicates } from "./utils.ts"
 
 /**
  * Represents a group of Coordinates on a game board with the same field type.
@@ -9,14 +10,8 @@ export class Group extends CoordSet {
   private readonly _field: Field | undefined
   private readonly _id: number | undefined
 
-  /**
-   * Constructs a new Group.
-   *
-   * @param {Iterable<Coord>} initialValues - An iterable of initial coordinates for the group.
-   * @param {Field} field - The field associated with the group.
-   * @param {number} groupId - The ID associated with the group.
-   */
-  constructor(
+  // beware when using this constructor, it does not check for duplicates
+  private constructor(
     initialValues?: Iterable<Coord>,
     field?: Field,
     groupId?: number,
@@ -24,6 +19,23 @@ export class Group extends CoordSet {
     super(initialValues)
     this._field = field
     this._id = groupId
+  }
+
+  /**
+   * Create a Group from an iterable of coordinates.
+   * Since this is a Set, if the iterable contains duplicates, only the first
+   * occurrence will be kept.
+   *
+   * @param {Iterable<Coord>} initialValues - The initial values for the set.
+   * @param {Field?} field - The field associated with the group.
+   * @param {number?} groupId - The ID associated with the group.
+   */
+  static from(
+    initialValues: Iterable<Coord>,
+    field?: Field,
+    groupId?: number,
+  ): Group {
+    return new Group(filterDuplicates(initialValues), field, groupId)
   }
 
   /**
@@ -97,6 +109,7 @@ export class Group extends CoordSet {
   }
 
   // Private method to create a copy of the group with the given coordinates
+  // It does not check for duplicates
   private _copyWithCoords(coords: Iterable<Coord>): Group {
     return new Group(coords, this._field, this._id)
   }
