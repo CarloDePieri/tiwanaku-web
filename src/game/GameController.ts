@@ -3,7 +3,7 @@ import { CoordSet } from "./CoordSet.ts"
 import { Crop, Field } from "./enums.ts"
 import { SerializedBoard, State } from "./State.ts"
 import { StateStack } from "./StateStack.ts"
-import { pickRandom } from "./utils.ts"
+import { pickRandom, shuffledCopy } from "./utils.ts"
 
 export class GameConfig {
   // TODO document these
@@ -112,21 +112,12 @@ export class GameController {
     state: State,
     growthStrategy: (state: State) => State,
   ): State | null {
-    let invalidTries = 0
-    for (;;) {
-      // try to grow the groups
-      const newState = growthStrategy(state)
-      // check if the returned state is not null and has valid groups
-      if (newState !== null && this.hasValidGroups(newState)) {
-        // we found a valid state, return it
-        return newState
-      } else {
-        // keep track of failed attempts
-        invalidTries++
-        // if we tried too many times, return null
-        if (invalidTries >= this.config.growGroupsMaxTries) return null
-      }
-    }
+    // TODO integrate this with generateFirstStep?
+    return this.tryUntil(
+      () => growthStrategy(state),
+      this.config.growGroupsMaxTries,
+      (result) => this.hasValidGroups(result),
+    )
   }
 
   /**
@@ -300,10 +291,80 @@ export class GameController {
     return true
   }
 
+  private tryUntil<T extends () => State | null>(
+    func: T,
+    maxTries: number,
+    validator?: (result: State) => boolean,
+  ): State | null {
+    let invalidTries = 0
+    for (;;) {
+      const result = func()
+      if (result !== null)
+        if (validator !== undefined) {
+          return validator(result) ? result : null
+        } else {
+          return result
+        }
+      invalidTries++
+      if (invalidTries >= maxTries) return null
+    }
+  }
+
+  private plantCrop(
+    crop: Crop,
+    state: State,
+    groupsToPlant: number[],
+  ): State | null {
+    return this.tryUntil(() => {
+      // for every group that needs to be planted
+      for (const groupId of groupsToPlant) {
+        // get all the border coordinates
+        const borderCoords: Coord[] = shuffledCopy(
+          state.groups
+            .get(groupId)!
+            .filter(
+              (coord) => state.getCell(coord.x, coord.y).crop === undefined,
+            )
+            .toArray(),
+        )
+        let cropPlanted = false
+        // check those coordinates until we find a suitable place to plant the crop
+        while (borderCoords.length > 0) {
+          const candidateCoord = borderCoords.pop()!
+          const neighboringCrop = candidateCoord
+            .getNeighbors(this.config.boardHeight, this.config.boardWidth)
+            .map((coord) => state.getCell(coord.x, coord.y).crop)
+          // check if the crop can be planted there
+          if (!neighboringCrop.includes(crop)) {
+            // plant the crop
+            state = state.copyWithCell(
+              state.getCell(candidateCoord.x, candidateCoord.y).copyWith({
+                crop,
+              }),
+            )
+            cropPlanted = true
+            // interrupt the search for this group
+            break
+          }
+        }
+        // if a group could not be placed at all, return null
+        if (!cropPlanted) return null
+      }
+      // if we got here, all groups have been planted
+      return state
+    }, this.config.stepMaxTries)
+  }
+
   public generateBoard(): SerializedBoard {
-    // TODO temporary, implement the actual logic
     const firstStep = this.generateFirstStep()
     this.stateStack.pushValid(firstStep)
+    // TODO temporary, implement the actual logic
+    const newState = this.plantCrop(
+      this.stateStack.nextCrop,
+      this.stateStack.lastState,
+      [...this.stateStack.lastState.groups.keys()],
+    )
+    if (newState !== null) this.stateStack.pushValid(newState)
 
     throw new Error("Not implemented")
   }

@@ -1,3 +1,5 @@
+import { Cell } from "./Cell.ts"
+import { Crop } from "./enums.ts"
 import { GameConfig, GameController } from "./GameController.ts"
 import { State } from "./State.ts"
 
@@ -13,6 +15,12 @@ const expose = (gameController: GameController) => {
       state: State,
       strategy: (state: State) => State,
     ): State | null => gameController["growGroups"](state, strategy),
+    generateFirstStep: (): State => gameController["generateFirstStep"](),
+    plantCrop: (
+      crop: Crop,
+      state: State,
+      groupsToPlant: number[],
+    ): State | null => gameController["plantCrop"](crop, state, groupsToPlant),
   }
 }
 
@@ -31,13 +39,19 @@ describe("A GameController", () => {
     minGroup,
     maxGroup,
   )
-  const gameController = new GameController(config)
+  let gameController: GameController
+  let exposed: ReturnType<typeof expose>
+
+  beforeAll(() => {
+    gameController = new GameController(config)
+    exposed = expose(gameController)
+  })
 
   describe.each(tenTimes)("when seeding ones (%d out of 10)", () => {
     let state: State
 
     beforeAll(() => {
-      state = expose(gameController).seedOnes()
+      state = exposed.seedOnes()
     })
 
     it("should be able to generate the board with the correct number of groups", () => {
@@ -65,6 +79,7 @@ describe("A GameController", () => {
       }
     })
   })
+
   describe.each(["DFS", "BFS"])(
     "when growing groups with %s",
     (strategyName) => {
@@ -73,7 +88,6 @@ describe("A GameController", () => {
         let state: State
 
         beforeAll(() => {
-          const exposed = expose(gameController)
           const strategy =
             strategyName === "DFS"
               ? exposed.depthFirstGrowth
@@ -107,6 +121,45 @@ describe("A GameController", () => {
             expect(cell.groupId).toBeDefined()
           }
         }, 5000)
+      })
+    },
+  )
+
+  describe.each(tenTimes)(
+    "when placing crops and succeeding (%d out of 10)",
+    () => {
+      let nextStep: State | null = null
+      let cellWithTwo: Cell[]
+      let groupsToPlant: number[]
+
+      beforeAll(() => {
+        while (nextStep === null) {
+          // keep trying to place crops until it succeeds
+          const step = exposed.generateFirstStep()
+          groupsToPlant = [...step.groups.entries()]
+            .filter(([, group]) => group.size >= 2)
+            .map(([id]) => id)
+          nextStep = exposed.plantCrop(Crop.two, step, groupsToPlant)
+        }
+        cellWithTwo = nextStep!.board
+          .flat()
+          .filter((cell) => cell.crop === Crop.two)
+      })
+
+      it("should place enough crop", () => {
+        expect(cellWithTwo.length).toBe(groupsToPlant.length)
+      })
+
+      it("should place crops correctly", () => {
+        let thereIsAtLeastOneTwo = false
+        for (const coord of cellWithTwo.flatMap((cell) =>
+          cell.coordinates.getNeighbors(boardHeight, boardWidth),
+        )) {
+          // these are all the cells neighboring a cell with crop 2: they should not be 2 themselves
+          expect(nextStep!.getCell(coord.x, coord.y).crop).not.toBe(Crop.two)
+          thereIsAtLeastOneTwo = true
+        }
+        expect(thereIsAtLeastOneTwo).toBe(true)
       })
     },
   )
