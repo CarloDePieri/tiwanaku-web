@@ -5,14 +5,18 @@ import { State } from "./State.ts"
 const expose = (gameController: GameController) => {
   return {
     seedOnes: (): State => gameController["seedOnes"](),
-    depthFirstGrowth: (state: State): State | null =>
+    depthFirstGrowth: (state: State): State =>
       gameController["depthFirstGrowth"](state),
+    breadthFirstGrowth: (state: State): State =>
+      gameController["breadthFirstGrowth"](state),
     growGroups: (
       state: State,
-      strategy: (state: State) => State | null,
+      strategy: (state: State) => State,
     ): State | null => gameController["growGroups"](state, strategy),
   }
 }
+
+const tenTimes = ((n) => Array.from({ length: n }, (_, i) => (i % n) + 1))(10)
 
 describe("A GameController", () => {
   const boardWidth = 5
@@ -29,7 +33,7 @@ describe("A GameController", () => {
   )
   const gameController = new GameController(config)
 
-  describe.each(Array(11).fill(null))("when seeding ones (%# of 10)", () => {
+  describe.each(tenTimes)("when seeding ones (%d out of 10)", () => {
     let state: State
 
     beforeAll(() => {
@@ -61,41 +65,49 @@ describe("A GameController", () => {
       }
     })
   })
+  describe.each(["DFS", "BFS"])(
+    "when growing groups with %s",
+    (strategyName) => {
+      // repeat this 11 times to ensure that the growth does not cause any issues
+      describe.each(tenTimes)("(%d run out of 10)", () => {
+        let state: State
 
-  // repeat this 11 times to ensure that the growth does not cause any issues
-  describe.each(Array(11).fill(null))("when growing groups (%# of 10)", () => {
-    let state: State
-
-    beforeAll(() => {
-      const exposed = expose(gameController)
-      let candidate: State | null = null
-      while (candidate === null) {
-        // redo the seeding every time to ensure a clean state
-        state = exposed.seedOnes()
-        candidate = exposed.growGroups(state, exposed.depthFirstGrowth)
-      }
-      state = candidate
-    })
-
-    it("should not cause different groups with same field touch", () => {
-      for (const cell of state.board.flat()) {
-        const neighbors = cell.coordinates
-          .getNeighbors(boardHeight, boardWidth)
-          .map((coord) => state.getCell(coord.x, coord.y))
-
-        for (const neighbor of neighbors) {
-          // if they have different groupId they must have different fields
-          if (neighbor.groupId !== cell.groupId) {
-            expect(neighbor.field).not.toBe(cell.field)
+        beforeAll(() => {
+          const exposed = expose(gameController)
+          const strategy =
+            strategyName === "DFS"
+              ? exposed.depthFirstGrowth
+              : exposed.breadthFirstGrowth
+          let candidate: State | null = null
+          while (candidate === null) {
+            // redo the seeding every time to ensure a clean state
+            state = exposed.seedOnes()
+            candidate = exposed.growGroups(state, strategy)
           }
-        }
-      }
-    })
+          state = candidate
+        })
 
-    it("should assign all cells to a group", () => {
-      for (const cell of state.board.flat()) {
-        expect(cell.groupId).toBeDefined()
-      }
-    }, 5000)
-  })
+        it("should not cause different groups with same field touch", () => {
+          for (const cell of state.board.flat()) {
+            const neighbors = cell.coordinates
+              .getNeighbors(boardHeight, boardWidth)
+              .map((coord) => state.getCell(coord.x, coord.y))
+
+            for (const neighbor of neighbors) {
+              // if they have different groupId they must have different fields
+              if (neighbor.groupId !== cell.groupId) {
+                expect(neighbor.field).not.toBe(cell.field)
+              }
+            }
+          }
+        })
+
+        it("should assign all cells to a group", () => {
+          for (const cell of state.board.flat()) {
+            expect(cell.groupId).toBeDefined()
+          }
+        }, 5000)
+      })
+    },
+  )
 })
