@@ -2,6 +2,7 @@ import { useAppSelector } from "../app/hooks.ts"
 import { selectBoard } from "../game/gameSlice.ts"
 import Square from "./Square.tsx"
 import useWindowDimensions from "./useWindowDimensions.ts"
+import backgroundImage from "../assets/background.png"
 
 interface BoardProps {
   cellMargin: number
@@ -11,7 +12,7 @@ interface BoardProps {
   maxVH: number
 }
 
-export default function GameBoard({
+export default function BoardLoaded({
   cellMargin,
   maxVW,
   maxVH,
@@ -76,28 +77,36 @@ export default function GameBoard({
         height: heightStr,
         maxWidth: `${maxVW}vw`,
         maxHeight: `${maxVH}vh`,
+        backgroundImage: `url(${backgroundImage})`,
+        backgroundSize: "cover",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
       }}
     >
-      {board.board.map((row, y) => {
-        return (
-          // TODO fix the key
-          <div style={{ display: "flex" }} key={`row_${y}`}>
-            {row.map((_, x) => {
-              const square = board.getCell(x, y)
-              return (
-                <Square
-                  width={`${cellW}${unit}`}
-                  height={`${cellH}${unit}`}
-                  margin={`${cellMargin}${unit}`}
-                  key={`coord_${square.coordinates.x}_${square.coordinates.y}`}
-                  field={square.field}
-                  size={square.crop}
-                />
-              )
-            })}
-          </div>
-        )
-      })}
+      <div>
+        {board.board.map((row, y) => {
+          return (
+            <div
+              style={{ display: "flex" }}
+              key={`row_${row[0].coordinates.y}`}
+            >
+              {row.map((_, x) => {
+                const cell = board.getCell(x, y)
+                return (
+                  <Square
+                    width={`${cellW}${unit}`}
+                    height={`${cellH}${unit}`}
+                    margin={`${cellMargin}${unit}`}
+                    key={`coord_${cell.coordinates.x}_${cell.coordinates.y}`}
+                    cell={cell}
+                  />
+                )
+              })}
+            </div>
+          )
+        })}
+      </div>
     </div>
   )
 }

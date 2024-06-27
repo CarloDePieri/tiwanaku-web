@@ -18,11 +18,13 @@ import { GameBoard, BoardSize, SerializedBoard } from "./GameBoard.ts"
 export interface GameState {
   generatingBoard: boolean
   board: SerializedBoard | null
+  size: BoardSize | null
 }
 
 const initialState: GameState = {
   generatingBoard: false,
   board: null,
+  size: null,
 }
 
 export type GenerateNewBoardPromise = SafePromise<
@@ -66,8 +68,9 @@ export const gameSlice = createSlice({
   reducers: {},
   extraReducers: (builder) => {
     builder
-      .addCase(generateNewBoard.pending, (state) => {
+      .addCase(generateNewBoard.pending, (state, action) => {
         state.board = null
+        state.size = action.meta.arg
         state.generatingBoard = true
       })
       .addCase(generateNewBoard.fulfilled, (state, action) => {
@@ -76,6 +79,7 @@ export const gameSlice = createSlice({
       })
       .addCase(generateNewBoard.rejected, (state, { meta: { aborted } }) => {
         state.generatingBoard = false
+        state.size = null
         if (aborted) console.log("Board generation aborted by the user")
       })
   },
@@ -88,6 +92,7 @@ export const selectBoard = createSelector(
     board ? GameBoard.fromSerializedBoard(board) : null,
 )
 export const selectGeneratingBoard = (state: RootState) => state.generatingBoard
+export const selectBoardSize = (state: RootState) => state.size
 
 // Actions
 // export const {} = gameSlice.actions

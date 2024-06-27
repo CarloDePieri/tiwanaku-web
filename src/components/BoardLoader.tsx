@@ -1,4 +1,5 @@
 import ContentLoader from "react-content-loader"
+import backgroundImageDark from "../assets/background-dark.png"
 import useWindowDimensions from "./useWindowDimensions.ts"
 
 interface BoardLoaderProps {
@@ -73,34 +74,45 @@ export function BoardLoader({
   }
 
   return (
-    <ContentLoader
-      width={widthStr}
-      height={heightStr}
-      backgroundColor="#f3f3f3"
-      foregroundColor="#c3c3c3"
-      speed={3}
+    <div
       style={{
-        maxWidth: `${maxVW}vw`,
-        maxHeight: `${maxVH}vh`,
+        backgroundImage: `url(${backgroundImageDark})`,
+        backgroundSize: "cover",
+        display: "inline-flex",
+        paddingLeft: `2${unit}`,
+        paddingTop: `1${unit}`,
       }}
     >
-      {Array(cellY)
-        .fill(0)
-        .map((_, i) =>
-          Array(cellX)
-            .fill(0)
-            .map((_, j) => {
-              return (
-                <rect
-                  x={`${j * (cellW + cellMargin)}${unit}`}
-                  y={`${i * (cellH + cellMargin)}${unit}`}
-                  width={`${cellW}${unit}`}
-                  height={`${cellH}${unit}`}
-                  key={`cell_${i}_${j}`}
-                />
-              )
-            }),
-        )}
-    </ContentLoader>
+      <ContentLoader
+        width={widthStr}
+        height={heightStr}
+        backgroundColor="#f3f3f3"
+        foregroundColor="#6b6b6b"
+        speed={3}
+        style={{
+          maxWidth: `${maxVW}vw`,
+          maxHeight: `${maxVH}vh`,
+          filter: "opacity(0.5)",
+        }}
+      >
+        {Array(cellY)
+          .fill(0)
+          .map((_, i) =>
+            Array(cellX)
+              .fill(0)
+              .map((_, j) => {
+                return (
+                  <rect
+                    x={`${j * (cellW + cellMargin)}${unit}`}
+                    y={`${i * (cellH + cellMargin)}${unit}`}
+                    width={`${cellW}${unit}`}
+                    height={`${cellH}${unit}`}
+                    key={`cell_${i}_${j}`}
+                  />
+                )
+              }),
+          )}
+      </ContentLoader>
+    </div>
   )
 }

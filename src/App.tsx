@@ -1,8 +1,7 @@
 import "./App.css"
 import { useState } from "react"
 import { useAppDispatch, useAppSelector } from "./app/hooks.ts"
-import { BoardLoader } from "./components/BoardLoader.tsx"
-import GameBoard from "./components/GameBoard.tsx"
+import Board from "./components/Board.tsx"
 import {
   abortNewBoardGeneration,
   generateNewBoard,
@@ -12,7 +11,6 @@ import {
 import { BoardSize } from "./game/GameBoard.ts"
 
 function App() {
-  const [size, setSize] = useState<BoardSize>("small")
   const [promise, setPromise] = useState<GenerateNewBoardPromise | null>(null)
 
   const loading = useAppSelector(selectGeneratingBoard)
@@ -28,28 +26,8 @@ function App() {
     if (loading) {
       abortGeneration()
     }
-    setSize(size)
     setPromise(dispatch(generateNewBoard(size)))
   }
-
-  const gameBoard = loading ? (
-    <BoardLoader
-      size={size}
-      cellMargin={0.5}
-      maxVH={95}
-      maxVW={95}
-      targetVW={95}
-      targetVH={95}
-    />
-  ) : (
-    <GameBoard
-      cellMargin={0.25}
-      maxVH={95}
-      maxVW={95}
-      targetVW={95}
-      targetVH={95}
-    />
-  )
 
   return (
     <div>
@@ -63,7 +41,7 @@ function App() {
           </>
         )}
       </div>
-      {gameBoard}
+      <Board />
     </div>
   )
 }
