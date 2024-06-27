@@ -1,15 +1,14 @@
-import { IncompleteCell } from "./Cell.ts"
+import { BaseBoard } from "../game/BaseBoard.ts"
 import { Coord } from "./Coord.ts"
-import { CoordSet } from "./CoordSet.ts"
 import { Group } from "./Group.ts"
+import { IncompleteCell } from "./IncompleteCell.ts"
 
 /**
- * Class representing the state of game board.
+ * Class representing the state of game board meant to be used during generation.
+ * The board contained can be incomplete, with some cells containing undefined fields.
+ * This class keeps tracks of groups of cells with the same group ID.
  */
-export class State {
-  private readonly _board: ReadonlyArray<ReadonlyArray<IncompleteCell>>
-  private readonly _boardHeight: number
-  private readonly _boardWidth: number
+export class State extends BaseBoard<IncompleteCell, State> {
   private readonly _groups: ReadonlyMap<number, Group>
 
   /**
@@ -22,21 +21,19 @@ export class State {
     board: IncompleteCell[][],
     groups: ReadonlyMap<number, Group>,
   ) {
-    this._board = board
-    this._boardHeight = board.length
-    this._boardWidth = board[0].length
+    super(board)
     this._groups = groups
   }
 
   /**
    * Create State instance from a copy of the given initial board.
    *
-   * @param {IncompleteCell[][]} initialBoard - The initial state of the board to copy.
+   * @param {IncompleteCell[][]} matrix - The initial state of the board to copy.
    */
-  static fromBoard(initialBoard: IncompleteCell[][]) {
+  static fromCellMatrix(matrix: IncompleteCell[][]): State {
     const groups: Map<number, Group> = new Map<number, Group>()
     return new State(
-      initialBoard.map((row) =>
+      matrix.map((row) =>
         row.map((cell) => {
           this.updateGroups(groups, cell)
           return cell.copy()
@@ -75,59 +72,12 @@ export class State {
   }
 
   /**
-   * Get actual board of the current state.
-   *
-   * @return {ReadonlyArray<ReadonlyArray<IncompleteCell>>} The current state of the board.
-   */
-  get board(): ReadonlyArray<ReadonlyArray<IncompleteCell>> {
-    return this._board
-  }
-
-  /**
-   * Get the height of the board.
-   *
-   * @return {number} The height of the board.
-   */
-  get boardHeight(): number {
-    return this._boardHeight
-  }
-
-  /**
-   * Get the width of the board.
-   *
-   * @return {number} The width of the board.
-   */
-  get boardWidth(): number {
-    return this._boardWidth
-  }
-
-  /**
    * Get the groups present on the board.
    *
    * @return {ReadonlyMap<number, Group>} The groups present on the board.
    */
   get groups(): ReadonlyMap<number, Group> {
     return this._groups
-  }
-
-  /**
-   * Get a specific cell from the board.
-   *
-   * @param {number} x - The x coordinate of the cell.
-   * @param {number} y - The y coordinate of the cell.
-   * @return {IncompleteCell} The cell at the given coordinates.
-   */
-  public getCell(x: number, y: number): IncompleteCell {
-    return this.board[y][x]
-  }
-
-  /**
-   * Get all the coordinates of the cells in the board.
-   *
-   * @return {CoordSet} A set of all the coordinates of the cells in the board.
-   */
-  public getBoardCoordinates(): CoordSet {
-    return CoordSet.from(this.board.flat().map((cell) => cell.coordinates))
   }
 
   /**
@@ -147,11 +97,7 @@ export class State {
    */
   public copyWithCell(cell: IncompleteCell): State {
     return new State(
-      this._board.map((row) =>
-        row.map((c) =>
-          c.coordinates.equals(cell.coordinates) ? cell.copy() : c.copy(),
-        ),
-      ),
+      this._copyCellMatrixWithCell(cell),
       this.getUpdatedGroups(cell),
     )
   }

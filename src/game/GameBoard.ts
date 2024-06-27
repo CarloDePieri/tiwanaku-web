@@ -1,3 +1,4 @@
+import { BaseBoard } from "./BaseBoard.ts"
 import { GameCell, SerializedCell } from "./GameCell.ts"
 import { State } from "../generation/State.ts"
 
@@ -8,15 +9,15 @@ export type BoardSize = "small" | "standard"
  */
 export type SerializedBoard = SerializedCell[][]
 
-export class GameBoard {
-  private readonly _board: ReadonlyArray<ReadonlyArray<GameCell>>
-  private readonly _boardHeight: number
-  private readonly _boardWidth: number
-
+/**
+ * Class representing a game board meant to be used by the React components.
+ * The board contained is supposed to be valid and complete.
+ *
+ * @extends {BaseBoard<GameCell>}
+ */
+export class GameBoard extends BaseBoard<GameCell, GameBoard> {
   private constructor(board: GameCell[][]) {
-    this._board = board
-    this._boardHeight = board.length
-    this._boardWidth = board[0].length
+    super(board)
   }
 
   /**
@@ -32,44 +33,6 @@ export class GameBoard {
         row.map((cell) => GameCell.fromCompleteCell(cell)),
       ),
     )
-  }
-
-  /**
-   * Get the height of the board.
-   *
-   * @return {number} The height of the board.
-   */
-  get boardHeight(): number {
-    return this._boardHeight
-  }
-
-  /**
-   * Get the width of the board.
-   *
-   * @return {number} The width of the board.
-   */
-  get boardWidth(): number {
-    return this._boardWidth
-  }
-
-  /**
-   * Get the current state of the board.
-   *
-   * @return {ReadonlyArray<ReadonlyArray<GameCell>>} The current state of the board.
-   */
-  get board(): ReadonlyArray<ReadonlyArray<GameCell>> {
-    return this._board
-  }
-
-  /**
-   * Get a specific cell from the board.
-   *
-   * @param {number} x - The x coordinate of the cell.
-   * @param {number} y - The y coordinate of the cell.
-   * @return {GameCell} The cell at the given coordinates.
-   */
-  public getCell(x: number, y: number): GameCell {
-    return this.board[y][x]
   }
 
   /**
@@ -95,5 +58,9 @@ export class GameBoard {
         row.map((cell) => GameCell.deserialize(cell)),
       ),
     )
+  }
+
+  copyWithCell(cell: GameCell): GameBoard {
+    return new GameBoard(this._copyCellMatrixWithCell(cell))
   }
 }

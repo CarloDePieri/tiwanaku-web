@@ -1,5 +1,5 @@
 import { State } from "./State.ts"
-import { IncompleteCell } from "./Cell.ts"
+import { IncompleteCell } from "./IncompleteCell.ts"
 import { Coord } from "./Coord.ts"
 import { Field } from "../game/enums.ts"
 
@@ -22,20 +22,20 @@ describe("A board State class", () => {
   })
 
   it("should be able to build a board from an initial matrix", () => {
-    const state = State.fromBoard(testInitialBoard)
+    const state = State.fromCellMatrix(testInitialBoard)
     expect(state.board).toEqual(testInitialBoard)
   })
 
   it("should be independent of the initial matrix", () => {
     const copyBoard = { ...testInitialBoard }
-    const state = State.fromBoard(testInitialBoard)
+    const state = State.fromCellMatrix(testInitialBoard)
     copyBoard[0][0] = copyBoard[0][0].copyWith({ field: Field.valley })
     expect(state.getCell(0, 0)).not.toEqual(copyBoard[0][0])
   })
 })
 
 describe("A board State", () => {
-  const state = State.fromBoard(testInitialBoard)
+  const state = State.fromCellMatrix(testInitialBoard)
 
   it("should be able to get a specific cell", () => {
     const cell = state.getCell(1, 1)
@@ -59,8 +59,8 @@ describe("A board State", () => {
   })
 
   it("should have an hash function", () => {
-    const a = State.fromBoard(testInitialBoard)
-    const b = State.fromBoard(testInitialBoard)
+    const a = State.fromCellMatrix(testInitialBoard)
+    const b = State.fromCellMatrix(testInitialBoard)
     const c = state.copyWithCell(
       new IncompleteCell(3, new Coord(0, 0), Field.valley, undefined),
     )

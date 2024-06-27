@@ -1,10 +1,11 @@
-import { Coord } from "./Coord.ts"
+import { CopyableCell } from "../game/Cell.ts"
 import { Crop, Field } from "../game/enums.ts"
+import { Coord } from "./Coord.ts"
 
 /**
  * An immutable cell on the game board.
  */
-export class IncompleteCell {
+export class IncompleteCell implements CopyableCell<IncompleteCell> {
   private readonly _groupId: number | undefined
   private readonly _coordinates: Coord
   private readonly _field: Field | undefined

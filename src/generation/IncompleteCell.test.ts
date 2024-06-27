@@ -1,4 +1,4 @@
-import { IncompleteCell } from "./Cell"
+import { IncompleteCell } from "./IncompleteCell.ts"
 import { Coord } from "./Coord"
 import { Crop, Field } from "../game/enums"
 

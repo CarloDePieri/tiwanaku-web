@@ -1,4 +1,4 @@
-import { IncompleteCell } from "../generation/Cell.ts"
+import { IncompleteCell } from "../generation/IncompleteCell.ts"
 import { Coord } from "../generation/Coord.ts"
 import { Crop, Field } from "./enums.ts"
 import { GameCell, SerializedCell } from "./GameCell.ts"

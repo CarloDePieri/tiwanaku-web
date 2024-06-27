@@ -1,5 +1,6 @@
-import { IncompleteCell } from "../generation/Cell.ts"
+import { IncompleteCell } from "../generation/IncompleteCell.ts"
 import { Coord, SerializedCoord } from "../generation/Coord.ts"
+import { CopyableCell } from "./Cell.ts"
 import { Crop, Field } from "./enums.ts"
 
 /**
@@ -14,7 +15,7 @@ export type SerializedCell = {
   hiddenCrop: boolean
 }
 
-export class GameCell {
+export class GameCell implements CopyableCell<GameCell> {
   private readonly _groupId: number
   private readonly _coordinates: Coord
   private readonly _field: Field
@@ -178,6 +179,17 @@ export class GameCell {
       serializedCell.crop as Crop,
       serializedCell.hiddenField,
       serializedCell.hiddenCrop,
+    )
+  }
+
+  public copy(): GameCell {
+    return new GameCell(
+      this._groupId,
+      this._coordinates,
+      this._field,
+      this._crop,
+      this._isFieldHidden,
+      this._isCropHidden,
     )
   }
 }
