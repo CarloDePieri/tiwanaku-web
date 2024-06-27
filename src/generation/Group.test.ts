@@ -1,5 +1,5 @@
 import { Coord } from "./Coord.ts"
-import { Field } from "./enums.ts"
+import { Field } from "../game/enums.ts"
 import { Group } from "./Group.ts"
 
 describe("A group", () => {

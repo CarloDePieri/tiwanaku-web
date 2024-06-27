@@ -1,5 +1,5 @@
-import { IncompleteCell } from "./Cell.ts"
-import { Coord } from "./Coord.ts"
+import { IncompleteCell } from "../generation/Cell.ts"
+import { Coord } from "../generation/Coord.ts"
 import { Crop, Field } from "./enums.ts"
 import { GameCell, SerializedCell } from "./GameCell.ts"
 

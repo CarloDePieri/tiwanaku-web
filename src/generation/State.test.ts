@@ -1,7 +1,7 @@
 import { State } from "./State.ts"
 import { IncompleteCell } from "./Cell.ts"
 import { Coord } from "./Coord.ts"
-import { Field } from "./enums.ts"
+import { Field } from "../game/enums.ts"
 
 const testInitialBoard = [
   [

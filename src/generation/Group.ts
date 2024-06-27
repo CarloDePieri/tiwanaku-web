@@ -1,6 +1,6 @@
 import { Coord } from "./Coord.ts"
 import { CoordSet } from "./CoordSet.ts"
-import { Field } from "./enums.ts"
+import { Field } from "../game/enums.ts"
 import { filterDuplicates } from "./utils.ts"
 
 /**

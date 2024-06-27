@@ -1,4 +1,4 @@
-import { Crop } from "./enums.ts"
+import { Crop } from "../game/enums.ts"
 import { State } from "./State.ts"
 
 /**

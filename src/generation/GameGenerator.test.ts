@@ -1,10 +1,10 @@
 import { IncompleteCell } from "./Cell.ts"
-import { Crop } from "./enums.ts"
-import { GameConfig, GameController } from "./GameController.ts"
+import { Crop } from "../game/enums.ts"
+import { GameConfig, GameGenerator } from "./GameGenerator.ts"
 import { State } from "./State.ts"
 
 // mocking utility for exposing selected private methods and fields
-const expose = (gameController: GameController) => {
+const expose = (gameController: GameGenerator) => {
   return {
     seedOnes: (): State => gameController["seedOnes"](),
     depthFirstGrowth: (state: State): State =>
@@ -23,7 +23,7 @@ const expose = (gameController: GameController) => {
 
 const tenTimes = ((n) => Array.from({ length: n }, (_, i) => (i % n) + 1))(10)
 
-describe("A GameController", () => {
+describe("A GameGenerator", () => {
   const boardWidth = 5
   const boardHeight = 5
   const minGroup = 6
@@ -36,11 +36,11 @@ describe("A GameController", () => {
     minGroup,
     maxGroup,
   )
-  let gameController: GameController
+  let gameController: GameGenerator
   let exposed: ReturnType<typeof expose>
 
   beforeAll(() => {
-    gameController = new GameController(config)
+    gameController = new GameGenerator(config)
     exposed = expose(gameController)
   })
 
@@ -156,6 +156,8 @@ describe("A GameController", () => {
     },
   )
 
+  // TODO why is the standard board so slow?
+  // describe.each(["small"])(
   describe.each(["small", "standard"])(
     "when generating a %s board",
     (boardSize: string) => {
@@ -165,7 +167,6 @@ describe("A GameController", () => {
       let minGroup: number
       let maxGroup: number
 
-      // TODO why is the standard board so slow?
       // describe.each(tenTimes)("(%d run out of 10)", () => {
       describe("(1 run out of 1)", () => {
         beforeAll(() => {
@@ -188,7 +189,7 @@ describe("A GameController", () => {
               minGroup,
               maxGroup,
             )
-            gameController = new GameController(configStandard)
+            gameController = new GameGenerator(configStandard)
             state = gameController.generateBoard()
           }
         })

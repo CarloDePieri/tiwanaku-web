@@ -1,7 +1,7 @@
 import { Coord } from "./Coord.ts"
 import { CoordSet } from "./CoordSet.ts"
-import { Crop, Field } from "./enums.ts"
-import { BoardSize, GameBoard, SerializedBoard } from "./GameBoard.ts"
+import { Crop, Field } from "../game/enums.ts"
+import { BoardSize, GameBoard, SerializedBoard } from "../game/GameBoard.ts"
 import { State } from "./State.ts"
 import { StateStack } from "./StateStack.ts"
 import { pickRandom, shuffledCopy } from "./utils.ts"
@@ -23,7 +23,7 @@ interface GroupGrowthResult {
   border: CoordSet
 }
 
-export class GameController {
+export class GameGenerator {
   // TODO explain how states are stored
   private stateStack: StateStack
 
@@ -410,6 +410,6 @@ export const generateBoard = (boardSize: BoardSize): SerializedBoard => {
     boardSize === "small" ? 6 : 10,
     boardSize === "small" ? 8 : 14,
   )
-  const state = new GameController(config).generateBoard()
+  const state = new GameGenerator(config).generateBoard()
   return GameBoard.fromCompleteState(state).getSerializedBoard()
 }

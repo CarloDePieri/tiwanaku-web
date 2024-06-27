@@ -1,5 +1,5 @@
 import { Coord } from "./Coord.ts"
-import { Crop, Field } from "./enums.ts"
+import { Crop, Field } from "../game/enums.ts"
 
 /**
  * An immutable cell on the game board.

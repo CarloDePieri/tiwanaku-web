@@ -1,6 +1,6 @@
 import { IncompleteCell } from "./Cell"
 import { Coord } from "./Coord"
-import { Crop, Field } from "./enums"
+import { Crop, Field } from "../game/enums"
 
 describe("An incomplete Cell", () => {
   let cell: IncompleteCell

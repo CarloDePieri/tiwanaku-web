@@ -1,5 +1,5 @@
 import { GameCell, SerializedCell } from "./GameCell.ts"
-import { State } from "./State.ts"
+import { State } from "../generation/State.ts"
 
 export type BoardSize = "small" | "standard"
 

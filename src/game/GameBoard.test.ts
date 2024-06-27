@@ -1,8 +1,8 @@
-import { IncompleteCell } from "./Cell.ts"
-import { Coord } from "./Coord.ts"
+import { IncompleteCell } from "../generation/Cell.ts"
+import { Coord } from "../generation/Coord.ts"
 import { Crop, Field } from "./enums.ts"
 import { GameBoard, SerializedBoard } from "./GameBoard.ts"
-import { State } from "./State.ts"
+import { State } from "../generation/State.ts"
 
 const testState = GameBoard.fromCompleteState(
   State.fromBoard([
