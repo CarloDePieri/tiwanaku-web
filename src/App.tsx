@@ -9,7 +9,7 @@ import {
   GenerateNewBoardPromise,
   selectGeneratingBoard,
 } from "./game/gameSlice.ts"
-import { BoardSize } from "./game/State.ts"
+import { BoardSize } from "./game/GameBoard.ts"
 
 function App() {
   const [size, setSize] = useState<BoardSize>("small")

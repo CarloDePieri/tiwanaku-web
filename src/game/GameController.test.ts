@@ -1,4 +1,4 @@
-import { Cell } from "./Cell.ts"
+import { IncompleteCell } from "./Cell.ts"
 import { Crop } from "./enums.ts"
 import { GameConfig, GameController } from "./GameController.ts"
 import { State } from "./State.ts"
@@ -121,7 +121,7 @@ describe("A GameController", () => {
     "when placing crops and succeeding (%d out of 10)",
     () => {
       let nextStep: State | null = null
-      let cellWithTwo: Cell[]
+      let cellWithTwo: IncompleteCell[]
       let groupsToPlant: number[]
 
       beforeAll(() => {

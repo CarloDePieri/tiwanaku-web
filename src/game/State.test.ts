@@ -1,55 +1,16 @@
-import { State, SerializedBoard } from "./State.ts"
-import { Cell } from "./Cell.ts"
+import { State } from "./State.ts"
+import { IncompleteCell } from "./Cell.ts"
 import { Coord } from "./Coord.ts"
 import { Field } from "./enums.ts"
 
 const testInitialBoard = [
   [
-    new Cell(undefined, new Coord(0, 0), undefined, undefined, true, true),
-    new Cell(1, new Coord(0, 1), Field.desert, undefined, true, true),
+    new IncompleteCell(undefined, new Coord(0, 0), undefined, undefined),
+    new IncompleteCell(1, new Coord(0, 1), Field.desert, undefined),
   ],
   [
-    new Cell(undefined, new Coord(1, 0), undefined, undefined, true, true),
-    new Cell(2, new Coord(1, 1), Field.mountain, undefined, true, true),
-  ],
-]
-
-const testInitialBoardSerialized: SerializedBoard = [
-  [
-    {
-      field: undefined,
-      coordinates: { x: 0, y: 0 },
-      groupId: undefined,
-      crop: undefined,
-      hiddenField: true,
-      hiddenCrop: true,
-    },
-    {
-      field: "desert",
-      coordinates: { x: 0, y: 1 },
-      groupId: 1,
-      crop: undefined,
-      hiddenField: true,
-      hiddenCrop: true,
-    },
-  ],
-  [
-    {
-      field: undefined,
-      coordinates: { x: 1, y: 0 },
-      groupId: undefined,
-      crop: undefined,
-      hiddenField: true,
-      hiddenCrop: true,
-    },
-    {
-      field: "mountain",
-      coordinates: { x: 1, y: 1 },
-      groupId: 2,
-      crop: undefined,
-      hiddenField: true,
-      hiddenCrop: true,
-    },
+    new IncompleteCell(undefined, new Coord(1, 0), undefined, undefined),
+    new IncompleteCell(2, new Coord(1, 1), Field.mountain, undefined),
   ],
 ]
 
@@ -86,19 +47,12 @@ describe("A board State", () => {
     expect(coords.size).toBe(4)
   })
 
-  it("should be able to serialize and deserialize", () => {
-    expect(State.fromSerializedBoard(testInitialBoardSerialized)).toEqual(state)
-    expect(state.getSerializedBoard()).toEqual(testInitialBoardSerialized)
-  })
-
   it("should be able to return a copy with an updated cell", () => {
-    const newCell = new Cell(
+    const newCell = new IncompleteCell(
       undefined,
       new Coord(0, 0),
       Field.valley,
       undefined,
-      true,
-      true,
     )
     const newBoard = state.copyWithCell(newCell)
     expect(newBoard.getCell(0, 0)).toEqual(newCell)
@@ -107,7 +61,11 @@ describe("A board State", () => {
   it("should have an hash function", () => {
     const a = State.fromBoard(testInitialBoard)
     const b = State.fromBoard(testInitialBoard)
+    const c = state.copyWithCell(
+      new IncompleteCell(3, new Coord(0, 0), Field.valley, undefined),
+    )
     expect(a.hash).toEqual(b.hash)
+    expect(a.hash).not.toEqual(c.hash)
   })
 
   it("should maintain a Group structure", () => {
@@ -126,7 +84,7 @@ describe("A board State", () => {
 
   it("should update the group structure when updating cells", () => {
     const newBoard = state.copyWithCell(
-      new Cell(3, new Coord(0, 0), Field.valley, undefined, true, true),
+      new IncompleteCell(3, new Coord(0, 0), Field.valley, undefined),
     )
     const groups = newBoard.groups
     expect(Array.from(groups.values()).length).toBe(3)

@@ -1,20 +1,13 @@
-import { Cell, SerializedCell } from "./Cell.ts"
+import { IncompleteCell } from "./Cell.ts"
 import { Coord } from "./Coord.ts"
 import { CoordSet } from "./CoordSet.ts"
 import { Group } from "./Group.ts"
-
-export type BoardSize = "small" | "standard"
-
-/**
- * A serialized version of a game board.
- */
-export type SerializedBoard = SerializedCell[][]
 
 /**
  * Class representing the state of game board.
  */
 export class State {
-  private readonly _board: ReadonlyArray<ReadonlyArray<Cell>>
+  private readonly _board: ReadonlyArray<ReadonlyArray<IncompleteCell>>
   private readonly _boardHeight: number
   private readonly _boardWidth: number
   private readonly _groups: ReadonlyMap<number, Group>
@@ -22,10 +15,13 @@ export class State {
   /**
    * Create a game board state.
    *
-   * @param {Cell[][]} board - The actual board.
+   * @param {IncompleteCell[][]} board - The actual board.
    * @param {ReadonlyMap<number, Group>} groups - The groups present on the board.
    */
-  private constructor(board: Cell[][], groups: ReadonlyMap<number, Group>) {
+  private constructor(
+    board: IncompleteCell[][],
+    groups: ReadonlyMap<number, Group>,
+  ) {
     this._board = board
     this._boardHeight = board.length
     this._boardWidth = board[0].length
@@ -35,9 +31,9 @@ export class State {
   /**
    * Create State instance from a copy of the given initial board.
    *
-   * @param {Cell[][]} initialBoard - The initial state of the board to copy.
+   * @param {IncompleteCell[][]} initialBoard - The initial state of the board to copy.
    */
-  static fromBoard(initialBoard: Cell[][]) {
+  static fromBoard(initialBoard: IncompleteCell[][]) {
     const groups: Map<number, Group> = new Map<number, Group>()
     return new State(
       initialBoard.map((row) =>
@@ -66,13 +62,11 @@ export class State {
             .fill(0)
             .map(
               (_, j) =>
-                new Cell(
+                new IncompleteCell(
                   undefined,
                   new Coord(j, i),
                   undefined,
                   undefined,
-                  true,
-                  true,
                 ),
             ),
         ),
@@ -83,9 +77,9 @@ export class State {
   /**
    * Get actual board of the current state.
    *
-   * @return {ReadonlyArray<ReadonlyArray<Cell>>} The current state of the board.
+   * @return {ReadonlyArray<ReadonlyArray<IncompleteCell>>} The current state of the board.
    */
-  get board(): ReadonlyArray<ReadonlyArray<Cell>> {
+  get board(): ReadonlyArray<ReadonlyArray<IncompleteCell>> {
     return this._board
   }
 
@@ -121,9 +115,9 @@ export class State {
    *
    * @param {number} x - The x coordinate of the cell.
    * @param {number} y - The y coordinate of the cell.
-   * @return {Cell} The cell at the given coordinates.
+   * @return {IncompleteCell} The cell at the given coordinates.
    */
-  public getCell(x: number, y: number): Cell {
+  public getCell(x: number, y: number): IncompleteCell {
     return this.board[y][x]
   }
 
@@ -137,42 +131,21 @@ export class State {
   }
 
   /**
-   * Serialize this state board into a JSON-serializable form.
-   *
-   * @return {SerializedBoard} The serialized form of the board.
-   */
-  public getSerializedBoard(): SerializedBoard {
-    return this.board.map((row) => row.map((cell) => cell.serialize()))
-  }
-
-  /**
-   * Create a new State instance from a serialized board.
-   *
-   * @param {SerializedBoard} serializedBoard - The serialized form of the board.
-   * @return {State} The new State instance.
-   */
-  public static fromSerializedBoard(serializedBoard: SerializedBoard): State {
-    return State.fromBoard(
-      serializedBoard.map((row) => row.map((cell) => Cell.deserialize(cell))),
-    )
-  }
-
-  /**
    * Get a hash of the current state of the board.
    *
    * @return {string} The hash of the current state of the board.
    */
   public get hash(): string {
-    return JSON.stringify(this.getSerializedBoard())
+    return JSON.stringify(this._board)
   }
 
   /**
    * Create a copy of the board state with an updated cell.
    *
-   * @param {Cell} cell - The updated cell.
+   * @param {IncompleteCell} cell - The updated cell.
    * @return {State} The copy of the board state with the updated cell.
    */
-  public copyWithCell(cell: Cell): State {
+  public copyWithCell(cell: IncompleteCell): State {
     return new State(
       this._board.map((row) =>
         row.map((c) =>
@@ -187,9 +160,12 @@ export class State {
    * Update the given groups map with the given cell. This method mutates the groups map.
    *
    * @param {Map<number, Group>} groups - The groups map to update.
-   * @param {Cell} cell - The cell to update the groups map with.
+   * @param {IncompleteCell} cell - The cell to update the groups map with.
    */
-  private static updateGroups(groups: Map<number, Group>, cell: Cell): void {
+  private static updateGroups(
+    groups: Map<number, Group>,
+    cell: IncompleteCell,
+  ): void {
     const groupId = cell.groupId
     // if the cell has no groupId yet, simply return the current groups
     if (groupId === undefined) return
@@ -211,10 +187,10 @@ export class State {
   /**
    * Get an updated copy of the groups with the new cell.
    *
-   * @param {Cell} cell - The new cell.
+   * @param {IncompleteCell} cell - The new cell.
    * @return {ReadonlyMap<number, Group>} The updated copy of the groups.
    */
-  private getUpdatedGroups(cell: Cell): ReadonlyMap<number, Group> {
+  private getUpdatedGroups(cell: IncompleteCell): ReadonlyMap<number, Group> {
     // make a copy of the groups
     const groupCopy = new Map<number, Group>([...this._groups])
     // update the copy with the new cell

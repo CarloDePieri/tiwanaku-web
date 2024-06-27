@@ -1,54 +1,37 @@
-import { Cell, SerializedCell } from "./Cell"
+import { IncompleteCell } from "./Cell"
 import { Coord } from "./Coord"
 import { Crop, Field } from "./enums"
 
-describe("A Cell", () => {
-  let cell: Cell
+describe("An incomplete Cell", () => {
+  let cell: IncompleteCell
   let coord: Coord
-  let serializedCell: SerializedCell
 
   beforeEach(() => {
     coord = new Coord(1, 1)
-    cell = new Cell(undefined, coord, undefined, undefined, false, false)
-    serializedCell = {
-      field: undefined,
-      crop: undefined,
-      groupId: undefined,
-      coordinates: { x: 1, y: 1 },
-      hiddenField: false,
-      hiddenCrop: false,
-    }
+    cell = new IncompleteCell(undefined, coord, undefined, undefined)
   })
 
   it("should allow to copy an object, updating some fields", () => {
     const newCoord = new Coord(2, 2)
     const newField = Field.desert
     const newCrop = Crop.four
-    const newHiddenField = true
-    const newHiddenCrop = true
 
     const newCell = cell.copyWith({
       coordinates: newCoord,
       field: newField,
       crop: newCrop,
-      hiddenField: newHiddenField,
-      hiddenCrop: newHiddenCrop,
     })
 
     expect(newCell.groupId).toBeUndefined()
     expect(newCell.coordinates).toEqual(newCoord)
     expect(newCell.field).toBe(newField)
     expect(newCell.crop).toBe(newCrop)
-    expect(newCell.hiddenField).toBe(newHiddenField)
-    expect(newCell.hiddenCrop).toBe(newHiddenCrop)
 
     // Also check that nullable fields can be nulled
     const nulledFieldCell = newCell.copyWith({
       field: undefined,
       crop: undefined,
       groupId: undefined,
-      hiddenField: undefined,
-      hiddenCrop: undefined,
       coordinates: undefined,
     })
     // these should be nulled
@@ -57,12 +40,5 @@ describe("A Cell", () => {
     expect(nulledFieldCell.groupId).toBeUndefined()
     // these should not have changed!
     expect(newCell.coordinates).toEqual(newCoord)
-    expect(newCell.hiddenField).toBe(newHiddenField)
-    expect(newCell.hiddenCrop).toBe(newHiddenCrop)
-  })
-
-  it("should be able to serialize and deserialize", () => {
-    expect(cell.serialize()).toEqual(serializedCell)
-    expect(Cell.deserialize(serializedCell)).toEqual(cell)
   })
 })

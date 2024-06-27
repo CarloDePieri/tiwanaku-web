@@ -13,7 +13,7 @@ import {
 import * as Comlink from "comlink"
 import { RootState } from "../app/store.ts"
 import { ComlinkPayload } from "../worker.ts"
-import { State, BoardSize, SerializedBoard } from "./State.ts"
+import { GameBoard, BoardSize, SerializedBoard } from "./GameBoard.ts"
 
 export interface GameState {
   generatingBoard: boolean
@@ -85,7 +85,7 @@ export const gameSlice = createSlice({
 export const selectBoard = createSelector(
   [(state: RootState) => state.board],
   (board: SerializedBoard | null) =>
-    board ? State.fromSerializedBoard(board) : null,
+    board ? GameBoard.fromSerializedBoard(board) : null,
 )
 export const selectGeneratingBoard = (state: RootState) => state.generatingBoard
 

@@ -1,7 +1,8 @@
 import { Coord } from "./Coord.ts"
 import { CoordSet } from "./CoordSet.ts"
 import { Crop, Field } from "./enums.ts"
-import { BoardSize, SerializedBoard, State } from "./State.ts"
+import { BoardSize, GameBoard, SerializedBoard } from "./GameBoard.ts"
+import { State } from "./State.ts"
 import { StateStack } from "./StateStack.ts"
 import { pickRandom, shuffledCopy } from "./utils.ts"
 
@@ -409,5 +410,6 @@ export const generateBoard = (boardSize: BoardSize): SerializedBoard => {
     boardSize === "small" ? 6 : 10,
     boardSize === "small" ? 8 : 14,
   )
-  return new GameController(config).generateBoard().getSerializedBoard()
+  const state = new GameController(config).generateBoard()
+  return GameBoard.fromCompleteState(state).getSerializedBoard()
 }
