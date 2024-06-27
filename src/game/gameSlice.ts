@@ -2,6 +2,7 @@ import {
   createAsyncThunk,
   createSelector,
   createSlice,
+  PayloadAction,
   SafePromise,
 } from "@reduxjs/toolkit"
 import {
@@ -14,6 +15,7 @@ import * as Comlink from "comlink"
 import { RootState } from "../app/store.ts"
 import { ComlinkPayload } from "../worker.ts"
 import { GameBoard, BoardSize, SerializedBoard } from "./GameBoard.ts"
+import { GameCell, SerializedCell } from "./GameCell.ts"
 
 export interface GameState {
   generatingBoard: boolean
@@ -41,6 +43,7 @@ export type GenerateNewBoardPromise = SafePromise<
 
 let webWorker: Worker
 
+// TODO pre - launch and cache some standard boards on app load
 // Async reducer for generating the board in a web worker thread
 const generateNewBoard = createAsyncThunk(
   "gameState/generateBoard",
@@ -65,7 +68,19 @@ const abortNewBoardGeneration = (promise: GenerateNewBoardPromise) => {
 export const gameSlice = createSlice({
   name: "gameState",
   initialState,
-  reducers: {},
+  reducers: {
+    nextStep: (state, action: PayloadAction<SerializedCell>) => {
+      if (state.board) {
+        const cell = GameCell.deserialize(action.payload)
+        const updatedCell = cell.isFieldHidden
+          ? cell.copyAndDiscoverField()
+          : cell.copyAndDiscoverCrop()
+        const board = GameBoard.fromSerializedBoard(state.board)
+        const updatedBoard = board.copyWithCell(updatedCell)
+        state.board = updatedBoard.getSerializedBoard()
+      }
+    },
+  },
   extraReducers: (builder) => {
     builder
       .addCase(generateNewBoard.pending, (state, action) => {
@@ -95,7 +110,7 @@ export const selectGeneratingBoard = (state: RootState) => state.generatingBoard
 export const selectBoardSize = (state: RootState) => state.size
 
 // Actions
-// export const {} = gameSlice.actions
+export const { nextStep } = gameSlice.actions
 export { generateNewBoard, abortNewBoardGeneration }
 
 export default gameSlice.reducer

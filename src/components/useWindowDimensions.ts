@@ -5,6 +5,8 @@ interface WindowDimensions {
   width: number
 }
 
+// TODO something is wrong with this function (it's not returning the correct values when the windows is resized )
+
 /**
  * Retrieve the available width and height of the window screen.
  *

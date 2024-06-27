@@ -1,0 +1,14 @@
+.activeEmpty {
+    filter: opacity(0) brightness(5);
+    -moz-transition:0.8s;
+    -webkit-transition:0.8s;
+}
+.active {
+    filter: grayscale(0.8) brightness(1.2);
+    -moz-transition:1.2s;
+    -webkit-transition:1.2s;
+}
+.inactive {
+    -moz-transition:1s;
+    -webkit-transition:1s;
+}
