@@ -5,19 +5,15 @@ interface WindowDimensions {
   width: number
 }
 
-// TODO something is wrong with this function (it's not returning the correct values when the windows is resized )
-
 /**
  * Retrieve the available width and height of the window screen.
  *
  * @returns {WindowDimensions} An object containing the height and width of the window.
  */
 function getWindowDimensions(): WindowDimensions {
-  const deviceWidth = window.screen.availWidth
-  const deviceHeight = window.screen.availHeight
   return {
-    height: deviceHeight,
-    width: deviceWidth,
+    height: window.innerHeight,
+    width: window.innerWidth,
   }
 }
 
