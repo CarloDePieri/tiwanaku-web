@@ -29,6 +29,8 @@ describe("A complete Cell", () => {
   })
 
   it("should be able to create a copy with discovered field and crop", () => {
+    expect(cell.isFieldHidden).toBe(true)
+    expect(cell.isCropHidden).toBe(true)
     const discoveredFieldCell = cell.copyAndDiscoverField()
     expect(discoveredFieldCell.isFieldHidden).toBe(false)
     expect(discoveredFieldCell.isCropHidden).toBe(true)
@@ -39,5 +41,15 @@ describe("A complete Cell", () => {
     expect(fullyDiscoveredCell.groupId).toBe(cell.groupId)
     expect(fullyDiscoveredCell.field).toBe(cell.field)
     expect(fullyDiscoveredCell.crop).toBe(cell.crop)
+  })
+
+  it("should be able to create an already discovered cell", () => {
+    const discoveredCell = GameCell.fromCompleteCell(
+      new IncompleteCell(1, coord, Field.desert, Crop.four),
+      false,
+      false,
+    )
+    expect(discoveredCell.isFieldHidden).toBe(false)
+    expect(discoveredCell.isCropHidden).toBe(false)
   })
 })

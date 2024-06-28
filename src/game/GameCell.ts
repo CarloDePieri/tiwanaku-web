@@ -97,9 +97,15 @@ export class GameCell implements CopyableCell<GameCell> {
    * Create a GameCell from a Cell with complete fields, no undefined is allowed.
    *
    * @param {IncompleteCell} cell - The cell to create a GameCell from.
+   * @param {boolean} hiddenField - Whether the field should be hidden.
+   * @param {boolean} hiddenCrop - Whether the crop should be hidden.
    * @return {GameCell} The GameCell created from the given Cell.
    */
-  public static fromCompleteCell(cell: IncompleteCell): GameCell {
+  public static fromCompleteCell(
+    cell: IncompleteCell,
+    hiddenField: boolean = true,
+    hiddenCrop: boolean = true,
+  ): GameCell {
     if (
       cell.groupId === undefined ||
       cell.field === undefined ||
@@ -112,8 +118,8 @@ export class GameCell implements CopyableCell<GameCell> {
       cell.coordinates,
       cell.field,
       cell.crop,
-      true,
-      true,
+      hiddenField,
+      hiddenCrop,
     )
   }
 
