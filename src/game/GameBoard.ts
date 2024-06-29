@@ -1,3 +1,4 @@
+import { CoordSet } from "../generation/CoordSet.ts"
 import { BaseBoard } from "./BaseBoard.ts"
 import { Field } from "./enums.ts"
 import { GameCell, SerializedCell } from "./GameCell.ts"
@@ -43,14 +44,19 @@ export class GameBoard extends BaseBoard<GameCell, GameBoard> {
    * All cells in the provided state must be complete, with no undefined.
    *
    * @param {State} state - The complete State instance.
+   * @param hints
    * @return {GameBoard} The new GameBoard instance.
    */
-  public static fromCompleteState(state: State): GameBoard {
+  public static fromCompleteState(state: State, hints: CoordSet): GameBoard {
     // TODO take hints as an argument (keep the hidden fields counter up to date)
     return new GameBoard(
       // build a GameCell matrix
       state.board.map((row) =>
-        row.map((cell) => GameCell.fromCompleteCell(cell)),
+        row.map((cell) =>
+          hints.has(cell.coordinates)
+            ? GameCell.fromCompleteCell(cell, false, false)
+            : GameCell.fromCompleteCell(cell),
+        ),
       ),
       // count the number of undiscovered fields
       state.board.flat().reduce(

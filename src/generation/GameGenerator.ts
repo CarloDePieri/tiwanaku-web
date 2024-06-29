@@ -1,11 +1,18 @@
+import { BoardZoneSelector } from "../game/BaseBoard.ts"
 import { Coord } from "./Coord.ts"
 import { CoordSet } from "./CoordSet.ts"
 import { Crop, Field } from "../game/enums.ts"
 import { BoardSize, GameBoard, SerializedBoard } from "../game/GameBoard.ts"
 import { State } from "./State.ts"
 import { StateStack } from "./StateStack.ts"
-import { pickRandom, shuffledCopy } from "./utils.ts"
+import {
+  getRandomInt,
+  getRandomWithPercentage,
+  pickRandom,
+  shuffledCopy,
+} from "./utils.ts"
 
+// TODO maybe use an interface for this?
 export class GameConfig {
   // TODO document these
   constructor(
@@ -15,6 +22,8 @@ export class GameConfig {
     public readonly growGroupsMaxTries: number,
     public readonly minGroups: number,
     public readonly maxGroups: number,
+    public readonly minHints: number,
+    public readonly maxHints: number,
   ) {}
 }
 
@@ -398,18 +407,48 @@ export class GameGenerator {
       this.stateStack = new StateStack(this.config.stepMaxTries)
     }
   }
+
+  /**
+   * Generate the hints for a board.
+   *
+   * @param {State} board - The board to generate the hints for.
+   * @return {CoordSet} The hints for the board.
+   */
+  public generateHints(board: State): CoordSet {
+    let hints = CoordSet.from([])
+    const targetHints = getRandomInt(this.config.minHints, this.config.maxHints)
+    let tries = 0
+    const zones = new BoardZoneSelector(board.board)
+    while (hints.size < targetHints && tries < 100) {
+      // pick a random zone to place the hints; prefer the border, then the inner ring, then the core
+      const zone = getRandomWithPercentage([
+        [zones.border, 76],
+        [zones.innerRing, 18],
+        [zones.core, 6],
+      ])
+      hints = hints.withCoord(pickRandom(zone)!)
+      // keep track of the number of tries, to avoid infinite loops
+      tries++
+    }
+    return hints
+  }
 }
 
 export const generateBoard = (boardSize: BoardSize): SerializedBoard => {
+  const isBoardSmall = boardSize === "small"
   // Define the board parameters
   const config = new GameConfig(
-    boardSize === "small" ? 5 : 9,
+    isBoardSmall ? 5 : 9,
     5,
     5,
     5,
-    boardSize === "small" ? 6 : 10,
-    boardSize === "small" ? 8 : 14,
+    isBoardSmall ? 6 : 10,
+    isBoardSmall ? 8 : 14,
+    isBoardSmall ? 3 : 5,
+    isBoardSmall ? 7 : 12,
   )
-  const state = new GameGenerator(config).generateBoard()
-  return GameBoard.fromCompleteState(state).getSerializedBoard()
+  const gameGenerator = new GameGenerator(config)
+  const state = gameGenerator.generateBoard()
+  const hints = gameGenerator.generateHints(state)
+  return GameBoard.fromCompleteState(state, hints).getSerializedBoard()
 }

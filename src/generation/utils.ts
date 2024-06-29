@@ -30,6 +30,40 @@ export function pickRandom<T>(array: Array<T>): T | null {
     : array[Math.floor(Math.random() * array.length)]
 }
 
+/**
+ * Get a random integer between min and max (inclusive).
+ * @param {number} min - The minimum value.
+ * @param {number} max - The maximum value.
+ * @return {number} A random integer between min and max (inclusive).
+ */
+export function getRandomInt(min: number, max: number): number {
+  min = Math.ceil(min)
+  max = Math.floor(max)
+  return Math.floor(Math.random() * (max - min + 1)) + min
+}
+
+// noinspection JSValidateJSDoc
+/**
+ * Get a random element from a list of values with a given percentage chance assigned.
+ * The sum of all percentages must be 100.
+ *
+ * @param {[T, number]} values - A list of values with their respective percentage chance.
+ * @return {T} The random value from the list.
+ */
+export function getRandomWithPercentage<T>(values: [T, number][]): T {
+  if (values.reduce((acc, action) => acc + action[1], 0) !== 100) {
+    throw new Error("The sum of all percentages must be 100.")
+  }
+  values.sort((a, b) => a[1] - b[1])
+  const random = Math.random() * 100
+  for (const value of values) {
+    if (random <= value[1]) {
+      return value[0]
+    }
+  }
+  return values[values.length - 1][0]
+}
+
 // noinspection JSValidateJSDoc
 /**
  * Filter duplicates from an iterable of equatable values.

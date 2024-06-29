@@ -1,3 +1,4 @@
+import { CoordSet } from "../generation/CoordSet.ts"
 import { IncompleteCell } from "../generation/IncompleteCell.ts"
 import { Coord } from "../generation/Coord.ts"
 import { Crop, Field } from "./enums.ts"
@@ -15,6 +16,7 @@ const testBoard = GameBoard.fromCompleteState(
       new IncompleteCell(2, new Coord(1, 1), Field.mountain, Crop.two),
     ],
   ]),
+  CoordSet.from([new Coord(1, 1)]),
 )
 const testInitialBoardSerialized: SerializedBoard = {
   board: [
@@ -50,8 +52,8 @@ const testInitialBoardSerialized: SerializedBoard = {
         coordinates: { x: 1, y: 1 },
         groupId: 2,
         crop: 2,
-        hiddenField: true,
-        hiddenCrop: true,
+        hiddenField: false,
+        hiddenCrop: false,
       },
     ],
   ],

@@ -28,6 +28,8 @@ describe("A GameGenerator", () => {
   const boardHeight = 5
   const minGroup = 6
   const maxGroup = 8
+  const minHints = 5
+  const maxHints = 10
   const config = new GameConfig(
     boardWidth,
     boardHeight,
@@ -35,13 +37,15 @@ describe("A GameGenerator", () => {
     5,
     minGroup,
     maxGroup,
+    minHints,
+    maxHints,
   )
-  let gameController: GameGenerator
+  let generator: GameGenerator
   let exposed: ReturnType<typeof expose>
 
   beforeAll(() => {
-    gameController = new GameGenerator(config)
-    exposed = expose(gameController)
+    generator = new GameGenerator(config)
+    exposed = expose(generator)
   })
 
   describe.each(tenTimes)("when seeding ones (%d out of 10)", () => {
@@ -90,7 +94,7 @@ describe("A GameGenerator", () => {
               ? exposed.depthFirstGrowth
               : exposed.breadthFirstGrowth
           // generate the first step
-          state = exposed.generateFirstStep([strategy.bind(gameController)])
+          state = exposed.generateFirstStep([strategy.bind(generator)])
         })
 
         it("should not cause different groups with same field touch", () => {
@@ -175,7 +179,7 @@ describe("A GameGenerator", () => {
             boardHeight = 5
             minGroup = 6
             maxGroup = 8
-            state = gameController.generateBoard()
+            state = generator.generateBoard()
           } else {
             boardWidth = 9
             boardHeight = 5
@@ -188,9 +192,11 @@ describe("A GameGenerator", () => {
               5,
               minGroup,
               maxGroup,
+              minHints,
+              maxHints,
             )
-            gameController = new GameGenerator(configStandard)
-            state = gameController.generateBoard()
+            generator = new GameGenerator(configStandard)
+            state = generator.generateBoard()
           }
         })
 
@@ -220,4 +226,10 @@ describe("A GameGenerator", () => {
       })
     },
   )
+
+  it("should be able to generate hints", () => {
+    const hints = generator.generateHints(State.Empty(5, 5))
+    expect(hints.size).toBeGreaterThanOrEqual(minHints)
+    expect(hints.size).toBeLessThanOrEqual(maxHints)
+  })
 })
