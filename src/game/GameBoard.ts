@@ -1,13 +1,21 @@
 import { BaseBoard } from "./BaseBoard.ts"
+import { Field } from "./enums.ts"
 import { GameCell, SerializedCell } from "./GameCell.ts"
 import { State } from "../generation/State.ts"
 
 export type BoardSize = "small" | "standard"
 
+export type HiddenFieldsCounter = {
+  [key in Field]: number
+}
+
 /**
  * A serialized version of a game board.
  */
-export type SerializedBoard = SerializedCell[][]
+export interface SerializedBoard {
+  board: SerializedCell[][]
+  hiddenFields: HiddenFieldsCounter
+}
 
 /**
  * Class representing a game board meant to be used by the React components.
@@ -16,8 +24,18 @@ export type SerializedBoard = SerializedCell[][]
  * @extends {BaseBoard<GameCell>}
  */
 export class GameBoard extends BaseBoard<GameCell, GameBoard> {
-  private constructor(board: GameCell[][]) {
+  private readonly _undiscoveredFieldsCounter: HiddenFieldsCounter
+
+  private constructor(
+    board: GameCell[][],
+    undiscoveredFields: HiddenFieldsCounter,
+  ) {
     super(board)
+    this._undiscoveredFieldsCounter = undiscoveredFields
+  }
+
+  public get undiscoveredFields(): HiddenFieldsCounter {
+    return this._undiscoveredFieldsCounter
   }
 
   /**
@@ -28,9 +46,24 @@ export class GameBoard extends BaseBoard<GameCell, GameBoard> {
    * @return {GameBoard} The new GameBoard instance.
    */
   public static fromCompleteState(state: State): GameBoard {
+    // TODO take hints as an argument (keep the hidden fields counter up to date)
     return new GameBoard(
+      // build a GameCell matrix
       state.board.map((row) =>
         row.map((cell) => GameCell.fromCompleteCell(cell)),
+      ),
+      // count the number of undiscovered fields
+      state.board.flat().reduce(
+        (counter, cell) => {
+          counter[cell.field!]++
+          return counter
+        },
+        {
+          [Field.desert]: 0,
+          [Field.forest]: 0,
+          [Field.mountain]: 0,
+          [Field.valley]: 0,
+        } as HiddenFieldsCounter,
       ),
     )
   }
@@ -41,7 +74,10 @@ export class GameBoard extends BaseBoard<GameCell, GameBoard> {
    * @return {SerializedBoard} The serialized form of the board.
    */
   public getSerializedBoard(): SerializedBoard {
-    return this.board.map((row) => row.map((cell) => cell.serialize()))
+    return {
+      board: this.board.map((row) => row.map((cell) => cell.serialize())),
+      hiddenFields: this._undiscoveredFieldsCounter,
+    }
   }
 
   /**
@@ -54,13 +90,21 @@ export class GameBoard extends BaseBoard<GameCell, GameBoard> {
     serializedBoard: SerializedBoard,
   ): GameBoard {
     return new GameBoard(
-      serializedBoard.map((row) =>
+      serializedBoard.board.map((row) =>
         row.map((cell) => GameCell.deserialize(cell)),
       ),
+      serializedBoard.hiddenFields,
     )
   }
 
   copyWithCell(cell: GameCell): GameBoard {
-    return new GameBoard(this._copyCellMatrixWithCell(cell))
+    const oldCell = this.getCell(cell.coordinates.x, cell.coordinates.y)
+    const undiscoveredFields = { ...this._undiscoveredFieldsCounter }
+    if (oldCell.isFieldHidden && !cell.isFieldHidden) {
+      undiscoveredFields[oldCell.field]--
+    } else if (!oldCell.isFieldHidden && cell.isFieldHidden) {
+      undiscoveredFields[oldCell.field]++
+    }
+    return new GameBoard(this._copyCellMatrixWithCell(cell), undiscoveredFields)
   }
 }
