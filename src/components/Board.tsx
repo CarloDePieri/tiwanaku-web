@@ -29,8 +29,6 @@ export default function Board() {
     return (
       <div
         style={{
-          marginTop: "1em",
-          marginBottom: "1em",
           display: "flex",
           justifyContent: "center",
           alignItems: "center",

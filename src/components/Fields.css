@@ -1,0 +1,14 @@
+div.field {
+    margin-top: 5px;
+    margin-bottom: 5px;
+    width: 100px;
+    height: 100px;
+    background-size: cover;
+}
+div.field--text {
+    color: rgba(31, 31, 31, 0.93);
+    font-weight: bold;
+    font-size: 40pt;
+    text-align: center;
+    text-shadow: 0 0 10px white;
+}

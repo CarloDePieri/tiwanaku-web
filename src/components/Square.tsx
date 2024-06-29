@@ -21,7 +21,7 @@ interface SquareProps {
   margin: string
 }
 
-function getBackgroundImage(field: Field): string {
+export function getBackgroundImage(field: Field): string {
   switch (field) {
     case Field.forest:
       return forestUrl

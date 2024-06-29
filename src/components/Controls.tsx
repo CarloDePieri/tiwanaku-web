@@ -54,7 +54,7 @@ export function Controls() {
   )
 
   return (
-    <Container style={{ marginTop: "10pt" }}>
+    <Container>
       <Row className="justify-content-md-center">
         <Col md={"4"} className={"d-flex align-items-center"}>
           <div className={"mx-auto controlsText"}>Generate a new board</div>
