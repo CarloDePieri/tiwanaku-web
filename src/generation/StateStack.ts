@@ -52,8 +52,8 @@ export class StateStack {
    *
    * @return {State} The last state.
    */
-  get lastState(): State {
-    return this.lastStep.state
+  get lastState(): State | undefined {
+    return this.lastStep?.state
   }
 
   /**
@@ -62,8 +62,8 @@ export class StateStack {
    *
    * @return {string[]} The blacklist of the last state.
    */
-  get lastStateBlacklist(): string[] {
-    return this.lastStep.blacklist
+  get lastStateBlacklist(): string[] | undefined {
+    return this.lastStep?.blacklist
   }
 
   /**
@@ -95,14 +95,15 @@ export class StateStack {
    */
   markInvalid() {
     if (!this.empty) {
+      // both lastStep and lastStateBlacklist are valid, since the stack is not empty
       // mark another failure
-      this.lastStep.tries++
-      if (this.lastStep.tries >= this.stepMaxTries) {
+      this.lastStep!.tries++
+      if (this.lastStep!.tries >= this.stepMaxTries) {
         // remove the last state from the stack
         const deadStep: Step = this.steps.pop()!
         if (!this.empty) {
           // add the dead state to the blacklist of the parent state
-          this.lastStateBlacklist.push(deadStep.state.hash)
+          this.lastStateBlacklist!.push(deadStep.state.hash)
         }
         // propagate the error to its predecessor
         this.markInvalid()
@@ -111,7 +112,7 @@ export class StateStack {
   }
 
   // return the last step in the stack
-  private get lastStep(): Step {
+  private get lastStep(): Step | undefined {
     return this.steps[this.steps.length - 1]
   }
 }

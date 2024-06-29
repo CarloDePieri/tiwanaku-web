@@ -17,13 +17,13 @@ describe("A state stack", () => {
 
   it("should store valid state", () => {
     stack.pushValid(mockState1)
-    expect(stack.lastState.hash).toBe("state1")
+    expect(stack.lastState?.hash).toBe("state1")
   })
 
   it("should invalidate a state only after the given maxTries", () => {
     stack.pushValid(mockState1)
     stack.markInvalid()
-    expect(stack.lastState.hash).toBe("state1")
+    expect(stack.lastState?.hash).toBe("state1")
     expect(stack.empty).toBe(false)
     stack.markInvalid()
     expect(stack.empty).toBe(true)

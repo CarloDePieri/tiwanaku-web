@@ -367,8 +367,8 @@ export class GameGenerator {
       // push the first step
       stack.pushValid(this.generateFirstStep())
 
-      // prepare the groupsToPlant
-      const groupsToPlant = Array.from(stack.lastState.groups.entries())
+      // prepare the groupsToPlant (lastState is not undefined since we just pushed the first step)
+      const groupsToPlant = Array.from(stack.lastState!.groups.entries())
         // sort them from smallest to the largest (since the smallest is the hardest to grow)
         .sort((a, b) => a[1].size - b[1].size)
         // map to the groupID and the group length
@@ -377,13 +377,13 @@ export class GameGenerator {
       // while the state stack is not empty
       while (!stack.empty) {
         if (stack.full) {
-          return stack.lastState
+          return stack.lastState!
         }
 
         // try to plant the next crop
         const candidateState = this.plantCrop(
           stack.nextCrop,
-          stack.lastState,
+          stack.lastState!,
           groupsToPlant
             // only pass the groups that are big enough to plant the crop
             .filter(([, groupSize]) => groupSize >= stack.nextCrop)
