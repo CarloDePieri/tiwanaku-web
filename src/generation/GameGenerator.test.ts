@@ -33,7 +33,7 @@ describe("A GameGenerator", () => {
   const config = new GameConfig(
     boardWidth,
     boardHeight,
-    10,
+    25,
     5,
     minGroup,
     maxGroup,
@@ -174,21 +174,20 @@ describe("A GameGenerator", () => {
       // describe.each(tenTimes)("(%d run out of 10)", () => {
       describe("(1 run out of 1)", () => {
         beforeAll(() => {
+          boardHeight = 5
           if (boardSize === "small") {
             boardWidth = 5
-            boardHeight = 5
             minGroup = 6
             maxGroup = 8
             state = generator.generateBoard()
           } else {
             boardWidth = 9
-            boardHeight = 5
             minGroup = 10
             maxGroup = 14
             const configStandard = new GameConfig(
               boardWidth,
               boardHeight,
-              5,
+              25,
               5,
               minGroup,
               maxGroup,

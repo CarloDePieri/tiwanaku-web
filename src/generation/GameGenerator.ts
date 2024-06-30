@@ -327,45 +327,40 @@ export class GameGenerator {
     state: State,
     groupsToPlant: number[],
   ): State | null {
-    // TODO remove this tryUntil, it's redundant with the one in stack
-    return this.tryUntil(() => {
-      // for every group that needs to be planted
-      for (const groupId of groupsToPlant) {
-        // get all the border coordinates
-        const borderCoords: Coord[] = shuffledCopy(
-          state.groups
-            .get(groupId)!
-            .filter(
-              (coord) => state.getCell(coord.x, coord.y).crop === undefined,
-            )
-            .toArray(),
-        )
-        let cropPlanted = false
-        // check those coordinates until we find a suitable place to plant the crop
-        while (borderCoords.length > 0) {
-          const candidateCoord = borderCoords.pop()!
-          const neighboringCrop = candidateCoord
-            .getNeighbors(this.config.boardHeight, this.config.boardWidth)
-            .map((coord) => state.getCell(coord.x, coord.y).crop)
-          // check if the crop can be planted there
-          if (!neighboringCrop.includes(crop)) {
-            // plant the crop
-            state = state.copyWithCell(
-              state.getCell(candidateCoord.x, candidateCoord.y).copyWith({
-                crop,
-              }),
-            )
-            cropPlanted = true
-            // interrupt the search for this group
-            break
-          }
+    // for every group that needs to be planted
+    for (const groupId of groupsToPlant) {
+      // get all the border coordinates
+      const borderCoords: Coord[] = shuffledCopy(
+        state.groups
+          .get(groupId)!
+          .filter((coord) => state.getCell(coord.x, coord.y).crop === undefined)
+          .toArray(),
+      )
+      let cropPlanted = false
+      // check those coordinates until we find a suitable place to plant the crop
+      while (borderCoords.length > 0) {
+        const candidateCoord = borderCoords.pop()!
+        const neighboringCrop = candidateCoord
+          .getNeighbors(this.config.boardHeight, this.config.boardWidth)
+          .map((coord) => state.getCell(coord.x, coord.y).crop)
+        // check if the crop can be planted there
+        if (!neighboringCrop.includes(crop)) {
+          // plant the crop
+          state = state.copyWithCell(
+            state.getCell(candidateCoord.x, candidateCoord.y).copyWith({
+              crop,
+            }),
+          )
+          cropPlanted = true
+          // interrupt the search for this group
+          break
         }
-        // if a group could not be placed at all, return null
-        if (!cropPlanted) return null
       }
-      // if we got here, all groups have been planted
-      return state
-    }, this.config.stepMaxTries)
+      // if a group could not be placed at all, return null
+      if (!cropPlanted) return null
+    }
+    // if we got here, all groups have been planted
+    return state
   }
 
   public generateBoard(): State {
@@ -440,7 +435,7 @@ export const generateBoard = (boardSize: BoardSize): SerializedBoard => {
   const config = new GameConfig(
     isBoardSmall ? 5 : 9,
     5,
-    5,
+    25,
     5,
     isBoardSmall ? 6 : 10,
     isBoardSmall ? 8 : 14,
