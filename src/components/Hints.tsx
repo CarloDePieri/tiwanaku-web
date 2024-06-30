@@ -1,6 +1,10 @@
 import { Col, Container, Row } from "react-bootstrap"
+import { useAppSelector } from "../app/hooks.ts"
+import { selectBoard } from "../game/gameSlice.ts"
 
 export function Hints() {
+  const board = useAppSelector(selectBoard)
+  if (!board) return <></>
   return (
     <Container>
       <Row>
