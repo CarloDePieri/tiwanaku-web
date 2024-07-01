@@ -1,25 +1,11 @@
-import { useState } from "react"
 import { Button, Col, Container, Row, Stack } from "react-bootstrap"
 import { FullScreenHandle } from "react-full-screen"
 import { useAppDispatch, useAppSelector } from "../app/hooks.ts"
-import { BoardSize } from "../game/GameBoard.ts"
-import {
-  abortNewBoardGeneration,
-  generateNewBoard,
-  GenerateNewBoardPromise,
-  selectGeneratingBoard,
-} from "../game/gameSlice.ts"
+import { pickFromCache, selectBoardUiState } from "../game/gameSlice.ts"
 
 export function Controls({ handle }: Readonly<{ handle: FullScreenHandle }>) {
-  const [promise, setPromise] = useState<GenerateNewBoardPromise | null>(null)
-
-  const loading = useAppSelector(selectGeneratingBoard)
   const dispatch = useAppDispatch()
-
-  function abortGeneration() {
-    // stop the current generation
-    if (promise) abortNewBoardGeneration(promise)
-  }
+  const boardUiState = useAppSelector(selectBoardUiState)
 
   async function fsToggle() {
     if (handle.active) {
@@ -29,28 +15,20 @@ export function Controls({ handle }: Readonly<{ handle: FullScreenHandle }>) {
     }
   }
 
-  const generate = (size: BoardSize) => {
-    // if there was a previous request, cancel it
-    if (loading) {
-      abortGeneration()
-    }
-    setPromise(dispatch(generateNewBoard(size)))
-  }
-
-  const controls = loading ? (
-    <Button
-      variant={"danger"}
-      className={"controls"}
-      onClick={() => abortGeneration()}
-    >
-      Abort
-    </Button>
-  ) : (
+  const controls = (
     <>
-      <Button className={"controls"} onClick={() => generate("small")}>
+      <Button
+        disabled={boardUiState === "loading"}
+        className={"controls"}
+        onClick={() => dispatch(pickFromCache("small"))}
+      >
         Small
       </Button>
-      <Button className={"controls"} onClick={() => generate("standard")}>
+      <Button
+        disabled={boardUiState === "loading"}
+        className={"controls"}
+        onClick={() => dispatch(pickFromCache("standard"))}
+      >
         Standard
       </Button>
     </>
@@ -64,9 +42,7 @@ export function Controls({ handle }: Readonly<{ handle: FullScreenHandle }>) {
         </Col>
         <Col md={"4"} className={"d-flex align-items-center"}>
           <Stack>
-            <div className={"mx-auto controlsText"}>
-              {loading ? "Generating..." : "Generate a new board"}
-            </div>
+            <div className={"mx-auto controlsText"}>Start a new game</div>
             <div className={"mx-auto"}>{controls}</div>
           </Stack>
         </Col>

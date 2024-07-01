@@ -16,3 +16,18 @@ div.controlsText {
         background-color: white !important;
     }
 }
+@keyframes fadeIn {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+}
+@keyframes fadeOut {
+    0% { opacity: 1; }
+    100% { opacity: 0; }
+}
+.fadeIn {
+    animation: fadeIn 2.0s;
+}
+.fadeOut {
+    animation: fadeOut 0.25s;
+    opacity: 0;
+}
