@@ -58,9 +58,11 @@ export function AppFields({
         const hintWidth = hintTableWidth / hintsTableCols
         const hintHeight = hintTableHeight / hintsTableRows
         setHintSize(Math.min(hintWidth, hintHeight))
+        console.log(Math.min(hintWidth, hintHeight))
       }
     }
-    updateHintSize()
+    // delay the first update to make sure the ref is set
+    setTimeout(() => updateHintSize(), 500)
     window.addEventListener("resize", updateHintSize)
     return () => window.removeEventListener("resize", updateHintSize)
   }, [hintsTableRows, hintsTableCols])

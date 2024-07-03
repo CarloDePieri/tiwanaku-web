@@ -23,7 +23,8 @@ export function AppBoard({
       }
     }
 
-    updateCellSize()
+    // delay the first update to make sure the ref is set
+    setTimeout(() => updateCellSize(), 500)
     window.addEventListener("resize", updateCellSize)
     return () => window.removeEventListener("resize", updateCellSize)
   }, [board])
