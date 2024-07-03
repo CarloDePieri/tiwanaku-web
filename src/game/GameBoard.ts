@@ -6,6 +6,9 @@ import { State } from "../generation/State.ts"
 
 export type BoardSize = "small" | "standard"
 
+/**
+ * A counter for the number of hidden fields of each type.
+ */
 export type HiddenFieldsCounter = {
   [key in Field]: number
 }
@@ -27,6 +30,7 @@ export interface SerializedBoard {
 export class GameBoard extends BaseBoard<GameCell, GameBoard> {
   private readonly _undiscoveredFieldsCounter: HiddenFieldsCounter
 
+  // Private constructor to prevent external instantiation.
   private constructor(
     board: GameCell[][],
     undiscoveredFields: HiddenFieldsCounter,
@@ -35,6 +39,11 @@ export class GameBoard extends BaseBoard<GameCell, GameBoard> {
     this._undiscoveredFieldsCounter = undiscoveredFields
   }
 
+  /**
+   * Get the number of hidden fields of each type.
+   *
+   * @return {HiddenFieldsCounter} The number of hidden fields of each type.
+   */
   public get undiscoveredFields(): HiddenFieldsCounter {
     return this._undiscoveredFieldsCounter
   }
@@ -44,11 +53,10 @@ export class GameBoard extends BaseBoard<GameCell, GameBoard> {
    * All cells in the provided state must be complete, with no undefined.
    *
    * @param {State} state - The complete State instance.
-   * @param hints
+   * @param {CoordSet} hints - The set of coordinates that are hints.
    * @return {GameBoard} The new GameBoard instance.
    */
   public static fromCompleteState(state: State, hints: CoordSet): GameBoard {
-    // TODO take hints as an argument (keep the hidden fields counter up to date)
     return new GameBoard(
       // build a GameCell matrix
       state.board.map((row) =>
@@ -103,6 +111,12 @@ export class GameBoard extends BaseBoard<GameCell, GameBoard> {
     )
   }
 
+  /**
+   * Get a copy of this board but with a cell replaced.
+   *
+   * @param {GameCell} cell - The cell to replace.
+   * @return {GameBoard} The new board instance with the cell replaced.
+   */
   copyWithCell(cell: GameCell): GameBoard {
     const oldCell = this.getCell(cell.coordinates.x, cell.coordinates.y)
     const undiscoveredFields = { ...this._undiscoveredFieldsCounter }

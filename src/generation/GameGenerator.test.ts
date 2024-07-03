@@ -160,9 +160,7 @@ describe("A GameGenerator", () => {
     },
   )
 
-  // TODO why is the standard board so slow?
-  describe.each(["small"])(
-    // describe.each(["small", "standard"])(
+  describe.each(["small", "standard"])(
     "when generating a %s board",
     (boardSize: string) => {
       let state: State
@@ -171,57 +169,54 @@ describe("A GameGenerator", () => {
       let minGroup: number
       let maxGroup: number
 
-      // describe.each(tenTimes)("(%d run out of 10)", () => {
-      describe("(1 run out of 1)", () => {
-        beforeAll(() => {
-          boardHeight = 5
-          if (boardSize === "small") {
-            boardWidth = 5
-            minGroup = 6
-            maxGroup = 8
-            state = generator.generateBoard()
-          } else {
-            boardWidth = 9
-            minGroup = 10
-            maxGroup = 14
-            const configStandard = new GameConfig(
-              boardWidth,
-              boardHeight,
-              25,
-              5,
-              minGroup,
-              maxGroup,
-              minHints,
-              maxHints,
-            )
-            generator = new GameGenerator(configStandard)
-            state = generator.generateBoard()
-          }
-        })
+      beforeAll(() => {
+        boardHeight = 5
+        if (boardSize === "small") {
+          boardWidth = 5
+          minGroup = 6
+          maxGroup = 8
+          state = generator.generateBoard()
+        } else {
+          boardWidth = 9
+          minGroup = 10
+          maxGroup = 14
+          const configStandard = new GameConfig(
+            boardWidth,
+            boardHeight,
+            25,
+            5,
+            minGroup,
+            maxGroup,
+            minHints,
+            maxHints,
+          )
+          generator = new GameGenerator(configStandard)
+          state = generator.generateBoard()
+        }
+      })
 
-        it("should be a valid board", () => {
-          expect(state.boardHeight).toBe(boardHeight)
-          expect(state.boardWidth).toBe(boardWidth)
-          expect(state.groups.size).toBeGreaterThanOrEqual(minGroup)
-          expect(state.groups.size).toBeLessThanOrEqual(maxGroup)
+      it("should be a valid board", () => {
+        expect(state.boardHeight).toBe(boardHeight)
+        expect(state.boardWidth).toBe(boardWidth)
+        expect(state.groups.size).toBeGreaterThanOrEqual(minGroup)
+        expect(state.groups.size).toBeLessThanOrEqual(maxGroup)
 
-          for (const cell of state.board.flat()) {
-            expect(cell.groupId).toBeDefined()
-            expect(cell.field).toBeDefined()
-            expect(cell.crop).toBeDefined()
-            const neighbors = cell.coordinates
-              .getNeighbors(boardHeight, boardWidth)
-              .map((coord) => state.getCell(coord.x, coord.y))
-            for (const neighbor of neighbors) {
-              // if they have different groupId they must have different fields
-              if (neighbor.groupId !== cell.groupId) {
-                expect(neighbor.field).not.toBe(cell.field)
-              }
-              // they must have a different crop
-              expect(neighbor.crop).not.toBe(cell.crop)
+        for (const cell of state.board.flat()) {
+          expect(cell.groupId).toBeDefined()
+          expect(cell.field).toBeDefined()
+          expect(cell.crop).toBeDefined()
+          const neighbors = cell.coordinates
+            .getNeighbors(boardHeight, boardWidth)
+            .map((coord) => state.getCell(coord.x, coord.y))
+          for (const neighbor of neighbors) {
+            // if they have different groupId they must have different fields
+            if (neighbor.groupId !== cell.groupId) {
+              expect(neighbor.field).not.toBe(cell.field)
             }
+            // they must have a different crop
+            expect(neighbor.crop).not.toBe(cell.crop)
           }
-        })
+        }
       })
     },
   )

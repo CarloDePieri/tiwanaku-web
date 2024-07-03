@@ -12,30 +12,47 @@ import {
   shuffledCopy,
 } from "./utils.ts"
 
-// TODO maybe use an interface for this?
+/**
+ * The configuration for the game generation.
+ */
 export class GameConfig {
-  // TODO document these
   constructor(
+    // The width of the board.
     public readonly boardWidth: number,
+    // The height of the board.
     public readonly boardHeight: number,
+    // The maximum number of times the generation algorithm will try to develop a given step.
     public readonly stepMaxTries: number,
+    // The maximum number of times the generation algorithm will try to grow the groups.
     public readonly growGroupsMaxTries: number,
+    // The minimum number of groups to generate.
     public readonly minGroups: number,
+    // The maximum number of groups to generate.
     public readonly maxGroups: number,
+    // The minimum number of hints to generate.
     public readonly minHints: number,
+    // The maximum number of hints to generate.
     public readonly maxHints: number,
   ) {}
 }
 
+// intermediate type used during the generation of the board to store the result of the group growth
 interface GroupGrowthResult {
   state: State
   border: CoordSet
 }
 
+/**
+ * Class used to generate a board for the game.
+ */
 export class GameGenerator {
-  // TODO explain how states are stored
+  // Stack used to keep track of failed attempt to develop a particular state of the board
   private stateStack: StateStack
 
+  /**
+   * Create a GameGenerator.
+   * @param {GameConfig} config - The configuration for the game generation.
+   */
   constructor(private readonly config: GameConfig) {
     this.stateStack = new StateStack(this.config.stepMaxTries)
   }
@@ -55,31 +72,40 @@ export class GameGenerator {
       this.breadthFirstGrowth,
     ],
   ): State {
-    let state: State | null = null
     if (availableStrategies.length === 0)
       throw new Error("No growth strategy was provided!")
-    while (state === null) {
+    for (;;) {
       // pick a random strategy
       const strategy = pickRandom(availableStrategies)!.bind(this)
       // prepare a seeded state
       const seededState = this.seedOnes()
-      // Since some combinations of seeded states and strategies may find difficult to grow the groups,
-      // tryUntil will return null after a certain number of tries.
-      state = this.tryUntil(
-        // Try to grow the groups using the given strategy.
-        () => strategy(seededState),
-        // maximum number of tries before returning null
-        this.config.growGroupsMaxTries,
-        // use this function to check if the state is valid
-        (result) => {
+
+      let invalidTries = 0
+      for (;;) {
+        const result = strategy(seededState)
+        // Some combinations of seeded states and strategies may find difficult
+        // to grow the groups, so let's check the result
+        if (result) {
+          let valid = true
+          // Check that the produced state is valid
           for (const cell of result.board.flat()) {
-            if (cell.groupId === undefined) return false
+            if (cell.groupId === undefined) {
+              valid = false
+              break
+            }
           }
-          return true
-        },
-      )
+          if (valid) {
+            return result
+          }
+        }
+        // if we got here, either the state was invalid or we couldn't grow the groups
+        invalidTries++
+        if (invalidTries >= this.config.growGroupsMaxTries) {
+          // if we tried too many times, try again from the beginning
+          break
+        }
+      }
     }
-    return state
   }
 
   /**
@@ -292,36 +318,16 @@ export class GameGenerator {
   }
 
   /**
-   * Try to execute a function until it returns a valid result.
-   * The function will be executed until it returns a non-null result or until
-   * the maximum number of tries is reached.
-   * If a validator function is provided, the result will be checked against it.
+   * Plant the given crop in the state.
+   * This method will try to plant the crop in the state in all groups that need to be planted.
+   * If the crop can't be planted, the method will return null.
    *
-   * @param {() => State | null} func - The function to execute.
-   * @param {number} maxTries - The maximum number of tries before returning null.
-   * @param {(result: State) => boolean} validator - The function to validate the result.
-   * @return {State | null} The result of the function, or null if the maximum number of tries was reached.
+   * @param {Crop} crop - The crop to plant.
+   * @param {State} state - The state to plant the crop in.
+   * @param {number[]} groupsToPlant - The groups that need to be planted.
+   * @return {State | null} The updated state, or null if the crop can't be planted.
    * @private
    */
-  private tryUntil(
-    func: () => State | null,
-    maxTries: number,
-    validator?: (result: State) => boolean,
-  ): State | null {
-    let invalidTries = 0
-    for (;;) {
-      const result = func()
-      if (result !== null)
-        if (validator !== undefined) {
-          return validator(result) ? result : null
-        } else {
-          return result
-        }
-      invalidTries++
-      if (invalidTries >= maxTries) return null
-    }
-  }
-
   private plantCrop(
     crop: Crop,
     state: State,
@@ -363,6 +369,11 @@ export class GameGenerator {
     return state
   }
 
+  /**
+   * Generate a board.
+   *
+   * @return {State} The generated board.
+   */
   public generateBoard(): State {
     for (;;) {
       // make sure to grab a fresh reference to the stack
@@ -429,6 +440,13 @@ export class GameGenerator {
   }
 }
 
+/**
+ * Generate a board of the given size.
+ * The board will be generated using the GameGenerator class and then serialized into a JSON-serializable form.
+ *
+ * @param {BoardSize} boardSize - The size of the board to generate.
+ * @return {SerializedBoard} The generated board.
+ */
 export const generateBoard = (boardSize: BoardSize): SerializedBoard => {
   const isBoardSmall = boardSize === "small"
   // Define the board parameters
