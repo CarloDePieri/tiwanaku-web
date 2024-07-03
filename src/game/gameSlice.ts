@@ -65,6 +65,7 @@ async function sleep(ms: number): Promise<void> {
 const pickFromCache = createAsyncThunk(
   "gameState/pickFromCache",
   (size: BoardSize, { dispatch, getState }) => {
+    // eslint no-async-promise-executor: it actually needs to be async
     return new Promise<boolean>(async (resolve, reject) => {
       // call this function to get the most up-to-date state
       const getUpToDateState = () => getState() as RootState
@@ -179,11 +180,6 @@ export const selectBoard = createSelector(
   (board: SerializedBoard | null) =>
     board ? GameBoard.fromSerializedBoard(board) : null,
 )
-export const selectBoardSize = (state: RootState): BoardSize | null => {
-  if (state.board === null) return null
-  else return state.board.board[0].length === 5 ? "small" : "standard"
-}
-
 export const selectBoardTransition = (state: RootState) => state.boardTransition
 export const selectBoardUiState = (state: RootState) => state.boardUiState
 export const selectGeneratingBoard = (size: BoardSize) => (state: RootState) =>
