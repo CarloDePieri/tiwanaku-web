@@ -1,14 +1,12 @@
-div.field {
+.game-field {
     margin-top: 5px;
     margin-bottom: 5px;
-    width: 100px;
-    height: 100px;
     background-size: cover;
 }
-div.field--text {
+.game-field--text {
     color: rgba(31, 31, 31, 0.93);
     font-weight: bold;
-    font-size: 40pt;
+    font-size: 24pt;
     text-align: center;
     text-shadow: 0 0 10px white;
 }

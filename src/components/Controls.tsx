@@ -2,6 +2,7 @@ import { Button, Col, Container, Row, Stack } from "react-bootstrap"
 import { FullScreenHandle } from "react-full-screen"
 import { useAppDispatch, useAppSelector } from "../app/hooks.ts"
 import { pickFromCache, selectBoardUiState } from "../game/gameSlice.ts"
+import "./Controls.css"
 
 export function Controls({ handle }: Readonly<{ handle: FullScreenHandle }>) {
   const dispatch = useAppDispatch()
@@ -48,7 +49,7 @@ export function Controls({ handle }: Readonly<{ handle: FullScreenHandle }>) {
         </Col>
         <Col md={"4"} className={"d-flex align-items-center"}>
           <Stack>
-            <div className={"mx-auto controlsText"}>Settings</div>
+            <div className={"mx-auto controlsText"}>Controls</div>
             <div className={"mx-auto"}>
               <Button
                 variant={"outline-primary"}
@@ -57,6 +58,13 @@ export function Controls({ handle }: Readonly<{ handle: FullScreenHandle }>) {
               >
                 {handle.active ? "Exit fullscreen" : "Go fullscreen"}
               </Button>
+              <a
+                href="https://github.com/CarloDePieri/tiwanaku-web"
+                target="_blank"
+                className={"btn btn-outline-primary controls"}
+              >
+                About
+              </a>
             </div>
           </Stack>
         </Col>

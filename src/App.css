@@ -2,16 +2,13 @@
 .fullscreenStyle {
     overflow: auto;
 }
-button.controls {
-    margin: 5pt;
-    font-weight: bold;
-}
-div.controlsText {
-    font-weight: bold;
-}
 @media (hover: none) and (pointer: coarse) {
-    /* Fix for smartphones and touchscreens for sticky hover on the fullscreen button*/
+    /* Fix for smartphones and touchscreens for sticky hover buttons */
     button.fsButton:hover {
+        color: #0b5ed7 !important;
+        background-color: white !important;
+    }
+    a.controls:hover {
         color: #0b5ed7 !important;
         background-color: white !important;
     }

@@ -3,14 +3,11 @@ import { useEffect } from "react"
 import { Stack } from "react-bootstrap"
 import { FullScreen, useFullScreenHandle } from "react-full-screen"
 import { useAppDispatch, useAppSelector } from "./app/hooks.ts"
-import Board from "./components/Board.tsx"
 import { Controls } from "./components/Controls.tsx"
-import { Fields } from "./components/Fields.tsx"
+import AppGame from "./components/AppGame.tsx"
 import { Hints } from "./components/Hints.tsx"
 import {
   generateNewBoard,
-  selectBoardTransition,
-  selectBoardUiState,
   selectCachedSmallBoards,
   selectCachedStandardBoards,
   selectGeneratingBoard,
@@ -25,8 +22,6 @@ function App() {
     selectGeneratingBoard("standard"),
   )
   const generatingSmallBoard = useAppSelector(selectGeneratingBoard("small"))
-  const boardTransition = useAppSelector(selectBoardTransition)
-  const boardUiState = useAppSelector(selectBoardUiState)
 
   // How many cached boards to keep, per size
   const cacheSize = 4
@@ -36,25 +31,18 @@ function App() {
     if (cachedStandardBoards.length < cacheSize && !generatingStandardBoard) {
       dispatch(generateNewBoard("standard"))
     }
-  }, [cachedStandardBoards])
+  }, [cachedStandardBoards, dispatch, generatingStandardBoard])
   useEffect(() => {
     if (cachedSmallBoards.length < cacheSize && !generatingSmallBoard) {
       dispatch(generateNewBoard("small"))
     }
-  }, [cachedSmallBoards])
+  }, [cachedSmallBoards, dispatch, generatingSmallBoard])
 
   return (
     <FullScreen className={"fullscreenStyle"} handle={handle}>
       <Stack gap={3} style={{ marginTop: "10pt", marginBottom: "20pt" }}>
-        <div className={boardTransition ? "fadeOut" : "fadeIn"}>
-          <Board />
-          {boardUiState === "loaded" && (
-            <>
-              <Hints />
-              <Fields />
-            </>
-          )}
-        </div>
+        <AppGame />
+        <Hints />
         <Controls handle={handle} />
       </Stack>
     </FullScreen>

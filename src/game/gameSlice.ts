@@ -71,7 +71,7 @@ const pickFromCache = createAsyncThunk(
 
       // reject this request if there is already a request pending for this size
       if (getUpToDateState().cache[size].requestPending) {
-        reject(false)
+        reject(new Error("Already pending"))
         return false
       }
       dispatch(toggleRequestPending(size))
@@ -90,7 +90,7 @@ const pickFromCache = createAsyncThunk(
           if (counter > 20) {
             // this should not happen
             dispatch(setBoardUiState("empty"))
-            reject(false)
+            reject(new Error("Timeout"))
             return false
           }
           await sleep(500)

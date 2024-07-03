@@ -12,3 +12,6 @@
     -moz-transition:1s;
     -webkit-transition:1s;
 }
+.spinner-animation {
+    animation-duration: 2s !important;
+}
