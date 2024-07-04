@@ -1,12 +1,26 @@
-import { Button, Col, Container, Row, Stack } from "react-bootstrap"
+import { Button, Col, Container, Row, Spinner, Stack } from "react-bootstrap"
 import { FullScreenHandle } from "react-full-screen"
 import { useAppDispatch, useAppSelector } from "../app/hooks.ts"
-import { pickFromCache, selectBoardUiState } from "../game/gameSlice.ts"
+import { BoardSize } from "../game/GameBoard.ts"
+import {
+  pickFromCache,
+  selectBoardUiState,
+  selectCachedSmallBoards,
+  selectCachedStandardBoards,
+} from "../game/gameSlice.ts"
 import "./Controls.css"
+import { Fullscreen, FullscreenExit } from "react-bootstrap-icons"
 
 export function Controls({ handle }: Readonly<{ handle: FullScreenHandle }>) {
   const dispatch = useAppDispatch()
   const boardUiState = useAppSelector(selectBoardUiState)
+  const cachedSmallBoards = useAppSelector(selectCachedSmallBoards)
+  const cachedStandardBoards = useAppSelector(selectCachedStandardBoards)
+
+  const firstLoadingSmall =
+    cachedSmallBoards.length === 0 && boardUiState === "empty"
+  const firstLoadingStandard =
+    cachedStandardBoards.length === 0 && boardUiState === "empty"
 
   async function fsToggle() {
     if (handle.active) {
@@ -16,21 +30,43 @@ export function Controls({ handle }: Readonly<{ handle: FullScreenHandle }>) {
     }
   }
 
+  function capitalize(str: string): string {
+    return str.charAt(0).toUpperCase() + str.slice(1)
+  }
+
+  // provide a spinner when needed, in addition to the button text
+  const getControlButtonContent = (size: BoardSize) => {
+    const check = size === "small" ? firstLoadingSmall : firstLoadingStandard
+    return check || boardUiState === "loading" ? (
+      <Stack direction={"horizontal"} gap={2}>
+        <Spinner
+          as="span"
+          size="sm"
+          animation="border"
+          className={"spinner-animation"}
+        />
+        <span>{capitalize(size)}</span>
+      </Stack>
+    ) : (
+      <span>{capitalize(size)}</span>
+    )
+  }
+
   const controls = (
     <>
       <Button
-        disabled={boardUiState === "loading"}
+        disabled={boardUiState === "loading" || firstLoadingSmall}
         className={"controls"}
         onClick={() => dispatch(pickFromCache("small"))}
       >
-        Small
+        {getControlButtonContent("small")}
       </Button>
       <Button
-        disabled={boardUiState === "loading"}
+        disabled={boardUiState === "loading" || firstLoadingStandard}
         className={"controls"}
         onClick={() => dispatch(pickFromCache("standard"))}
       >
-        Standard
+        {getControlButtonContent("standard")}
       </Button>
     </>
   )
@@ -50,20 +86,23 @@ export function Controls({ handle }: Readonly<{ handle: FullScreenHandle }>) {
         <Col md={"4"} className={"d-flex align-items-center"}>
           <Stack>
             <div className={"mx-auto controlsText"}>Controls</div>
-            <div className={"mx-auto"}>
+            <div className={"w-auto"}>
               <Button
                 variant={"outline-primary"}
                 className={"controls fsButton"}
                 onClick={fsToggle}
               >
-                {handle.active ? "Exit fullscreen" : "Go fullscreen"}
+                <Stack direction={"horizontal"} gap={1}>
+                  {handle.active ? <FullscreenExit /> : <Fullscreen />}
+                  <span>Fullscreen</span>
+                </Stack>
               </Button>
               <a
                 href="https://github.com/CarloDePieri/tiwanaku-web"
                 target="_blank"
                 className={"btn btn-outline-primary controls"}
               >
-                About
+                Info
               </a>
             </div>
           </Stack>

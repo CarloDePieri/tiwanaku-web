@@ -16,10 +16,10 @@
   "dependencies": {
     "@reduxjs/toolkit": "^2.2.5",
     "@uidotdev/usehooks": "^2.4.1",
-    "bootstrap": "^5.3.3",
     "comlink": "^4.4.1",
     "react": "^18.2.0",
-    "react-bootstrap": "^2.10.2",
+    "react-bootstrap": "^2.10.4",
+    "react-bootstrap-icons": "^1.11.4",
     "react-content-loader": "^7.0.0",
     "react-dom": "^18.2.0",
     "react-full-screen": "^1.1.1",
