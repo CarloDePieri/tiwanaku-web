@@ -1,5 +1,7 @@
 {
   "name": "tiwanaku-web",
+  "homepage": "https://carlodepieri.github.io/tiwanaku-web/",
+  "description": "A web app companion for the Tiwanaku board game.",
   "private": true,
   "version": "0.0.0",
   "type": "module",
