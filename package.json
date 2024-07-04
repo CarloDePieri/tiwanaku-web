@@ -16,6 +16,7 @@
   "dependencies": {
     "@reduxjs/toolkit": "^2.2.5",
     "@uidotdev/usehooks": "^2.4.1",
+    "bootstrap": "^5.3.3",
     "comlink": "^4.4.1",
     "react": "^18.2.0",
     "react-bootstrap": "^2.10.4",
