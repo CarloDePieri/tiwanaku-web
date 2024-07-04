@@ -1,30 +1,26 @@
-# React + TypeScript + Vite
+# Tiwanaku Web
+[![Dev](https://github.com/CarloDePieri/tiwanaku-web/actions/workflows/dev.yml/badge.svg)](https://github.com/CarloDePieri/tiwanaku-web/actions/workflows/dev.yml)
+[![Coverage Status](https://coveralls.io/repos/github/CarloDePieri/tiwanaku-web/badge.svg?branch=main)](https://coveralls.io/github/CarloDePieri/tiwanaku-web?branch=main)
+[![Deploy](https://github.com/CarloDePieri/tiwanaku-web/actions/workflows/deploy.yml/badge.svg)](https://github.com/CarloDePieri/tiwanaku-web/actions/workflows/deploy.yml)
+![Maintenance](https://img.shields.io/maintenance/yes/2024)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This is a companion web app for the board game [Tiwanaku](https://boardgamegeek.com/boardgame/267979/tiwanaku) by [Sit Down! Games](https://sitdown-games.com/produit/tiwanaku/).
 
-Currently, two official plugins are available:
+It's currently hosted [on GitHub Pages](https://carlodepieri.github.io/tiwanaku-web/).
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+It can generate a random setup for the game, and also provide a way to track the board state during play, effectively replacing 
+the wheel. This prolongs the life of the game, as only a limited number of setup disks are provided in the box.
 
-## Expanding the ESLint configuration
+The UI is designed to be mobile-friendly, so you can use it on your phone or tablet during play.
 
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
+## How to use it
 
-- Configure the top-level `parserOptions` property like this:
+Open the [web app](https://carlodepieri.github.io/tiwanaku-web/) on your device, and click on one of the two board size 
+buttons to generate a random setup. Use the provided hints to set up the board on your table and start playing. Remember
+you can simply generate a new board if you don't like the starting hints!
 
-```js
-export default {
-  // other rules...
-  parserOptions: {
-    ecmaVersion: 'latest',
-    sourceType: 'module',
-    project: ['./tsconfig.json', './tsconfig.node.json'],
-    tsconfigRootDir: __dirname,
-  },
-}
-```
+Depending on your device screen size, you may obtain a better experience by using the app in landscape mode: so make 
+sure to experiment what works better for you by rotating your device.
 
-- Replace `plugin:@typescript-eslint/recommended` to `plugin:@typescript-eslint/recommended-type-checked` or `plugin:@typescript-eslint/strict-type-checked`
-- Optionally add `plugin:@typescript-eslint/stylistic-type-checked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and add `plugin:react/recommended` & `plugin:react/jsx-runtime` to the `extends` list
+To discover a field or to divine its crop, you have to click (or touch) & HOLD on the field of your choice. This is to
+prevent accidental reveals!
